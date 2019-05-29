@@ -1,0 +1,40 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Archiwum pomiarów</title>
+<link rel="stylesheet" type="text/css" href="/ui/style.css">
+<link rel="stylesheet" type="text/css" href="/ui/menu.css">
+<script type="text/javascript">
+function loadArchive() {
+	var spiList = document.getElementById("spiList");
+	var usbList = document.getElementById("usbList");
+	var con = new XMLHttpRequest();
+	con.open('GET', "arch.json", true);
+	con.onreadystatechange = function() {
+		if (con.readyState === 4 && con.status === 200) {
+			var data = JSON.parse(con.responseText);
+			var spi = data.spi;
+			for (var i=0; i<spi.length; i++) {
+				var str = spi[i].filename + " (" + spi[i].filesize + ")<br>";
+                spiList.innerHTML += str;
+            }
+			var usb = data.usb;
+			for (var i=0; i<usb.length; i++) {
+				var str = usb[i].filename + " (" + usb[i].filesize + ")<br>";
+				usbList.innerHTML += str;
+			}
+		}
+	};
+	con.send(null);
+}
+</script>
+</head>
+<body onload="loadArchive()">
+<script src="/ui/menu.js"></script>
+<div id="main">
+<h1>Archiwum pomiarów</h1>
+<div id="spiList">Pliki na nośniku SPI Flash:<br></div>
+<div id="usbList">Pliki na nośniku USB:<br></div>
+</div>
+</body>
+</html>

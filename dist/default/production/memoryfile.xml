@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<project>                                  
+  <executable name="dist/default/production/EtherGeiger_v2_PIC32.production.elf">                 
+    <memory name="program">                 
+      <units>bytes</units>                 
+      <length>263312</length>                 
+      <used>192420</used>                     
+      <free>70892</free>                     
+    </memory>                              
+    <memory name="data">              
+      <units>bytes</units>                 
+      <length>65536</length>                 
+      <used>23340</used>                     
+      <free>42196</free>                     
+    </memory>                              
+  </executable>                            
+</project>                                 
