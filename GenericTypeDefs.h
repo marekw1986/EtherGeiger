@@ -546,4 +546,12 @@ typedef union
 
 #undef __EXTENSION
 
+#define MAKEWORD(a, b)   ((WORD) (((BYTE) (a)) | ((WORD) ((BYTE) (b))) << 8)) 
+#define MAKELONG(a, b)   ((unsigned long) (((WORD) (a)) | ((DWORD) ((WORD) (b))) << 16)) 
+#define HIBYTE(w)   ((BYTE) ((((WORD) (w)) >> 8) /* & 0xFF*/)) 
+//#define HIBYTE(w)   ((BYTE) (*((char *)&w+1)))		// molto meglio :)
+#define HIWORD(l)   ((WORD) (((DWORD) (l) >> 16) & 0xFFFF)) 
+#define LOBYTE(w)   ((BYTE) (w)) 
+#define LOWORD(l)   ((WORD) (l)) 
+
 #endif /* __GENERIC_TYPE_DEFS_H_ */

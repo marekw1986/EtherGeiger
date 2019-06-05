@@ -92,7 +92,7 @@
 //#define STACK_USE_BERKELEY_API			// Berekely Sockets APIs are available
 //#define STACK_USE_ZEROCONF_LINK_LOCAL	// Zeroconf IPv4 Link-Local Addressing
 //#define STACK_USE_ZEROCONF_MDNS_SD		// Zeroconf mDNS and mDNS service discovery
-
+#define STACK_USE_MQTT_CLIENT
 
 // =======================================================================
 //   Data Storage Options
@@ -276,7 +276,8 @@
 			WORD wRXBufferSize;
 		} TCPSocketInitializer[] = 
 		{
-			//{TCP_PURPOSE_GENERIC_TCP_CLIENT, TCP_ETH_RAM, 125, 100},
+			{TCP_PURPOSE_GENERIC_TCP_CLIENT, TCP_PIC_RAM, 256, 256},
+            {TCP_PURPOSE_GENERIC_TCP_CLIENT, TCP_PIC_RAM, 256, 256},
 			{TCP_PURPOSE_GENERIC_TCP_SERVER, TCP_ETH_RAM, 20, 20},
 			//{TCP_PURPOSE_TELNET, TCP_ETH_RAM, 200, 150},
 			//{TCP_PURPOSE_TELNET, TCP_ETH_RAM, 200, 150},

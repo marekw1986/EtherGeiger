@@ -24,6 +24,7 @@
 #include "fatfs/ff.h"
 #include "fatfs/diskio.h"
 #include "net/TCPIP.h"
+#include "net/MQTT.h"
 #include "nvram/nvram.h"
 #include "config/config.h"
 #include "geiger/geiger.h"
@@ -58,6 +59,7 @@ FATFS USBFatFS;
 extern void GenericTCPServer(void);
 static void handle_usb_log (void);
 static void handle_bme_read (void);
+void handle_mqtt(void);
 
 int main(int argc, char** argv) {
     
@@ -142,6 +144,7 @@ int main(int argc, char** argv) {
         handle_bme_read();
         handle_io();
         handle_usb_log();
+        handle_mqtt();
     }
 
     return (EXIT_SUCCESS);
@@ -230,6 +233,108 @@ void handle_usb_log (void) {
             f_close(&file);            
         }
     }   
+}
+
+void handle_mqtt(void) {
+    
+	static enum	{
+		MQTT_HOME = 0,
+		MQTT_BEGIN,
+		MQTT_CONNECT,
+		MQTT_CONNECT_WAIT,
+		MQTT_PUBLISH,
+		MQTT_PUBLISH_WAIT,
+		MQTT_FINISHING,
+		MQTT_DONE
+	} MQTTState = MQTT_HOME;
+    
+	static DWORD WaitTime;
+	static char JSONbuffer[64];
+    static uint32_t mqtt_timer = 0;
+       
+	switch(MQTTState)	{
+		case MQTT_HOME:
+        if((uint32_t)(millis()-mqtt_timer) > 60000) {
+            // Start sending to MQTT server
+            mqtt_timer = millis();
+            MQTTState++;
+		}
+		break;
+
+		case MQTT_BEGIN:
+        if(MQTTBeginUsage()) {
+            // Note that these strings must stay allocated in 
+            // memory until MQTTIsBusy() returns FALSE.  To 
+            // guarantee that the C compiler does not reuse this 
+            // memory, you must allocate the strings as static.
+            MQTTClient.Server.szRAM = "192.168.1.95";	// MQTT server address
+            MQTTClient.ConnectId.szRAM = "d:atlantis:ethergeiger:1";
+            MQTTClient.Username.szRAM = "use-token-auth";
+            MQTTClient.Password.szRAM = "secretpassword";
+            MQTTClient.bSecure=FALSE;
+            //  MQTTClient.m_Callback = callback;
+            MQTTClient.QOS=0;
+            MQTTClient.KeepAlive=MQTT_KEEPALIVE_LONG;
+            //  MQTTClient.Stream = stream;
+            MQTTState++;
+        }
+		break;
+
+		case MQTT_CONNECT:
+        MQTTConnect(MQTTClient.ConnectId.szRAM,MQTTClient.Username.szRAM,MQTTClient.Password.szRAM, NULL,0,0,NULL);
+        MQTTState++;
+		break;
+
+		case MQTT_CONNECT_WAIT:
+        if(MQTTIsIdle()) {
+            if(MQTTResponseCode == MQTT_SUCCESS)
+                MQTTState++;
+            else {
+                MQTTState = MQTT_FINISHING;
+            }
+        }
+		break;
+
+		case MQTT_PUBLISH:
+        MQTTClient.Topic.szRAM = "iot-2/evt/temperature/fmt/json";
+        GetAsJSONValue(JSONbuffer,"temperature",25.5);
+        MQTTClient.Payload.szRAM = JSONbuffer;
+        MQTTPublish(MQTTClient.Topic.szRAM,MQTTClient.Payload.szRAM,strlen(MQTTClient.Payload.szRAM),0);		// così... ROM?
+        MQTTState++;
+		break;
+
+		case MQTT_PUBLISH_WAIT:
+        if(MQTTIsIdle()) {
+            if(MQTTResponseCode == MQTT_SUCCESS)
+                MQTTState=MQTT_FINISHING;
+            else {
+                MQTTState=MQTT_FINISHING;
+            }
+        }
+		break;
+
+		case MQTT_FINISHING:
+        if(!MQTTIsBusy())	{
+            // Finished receiving mail
+            //LED1_IO = 0;
+            MQTTState++;
+            WaitTime = TickGet();
+            //LED2_IO = (MQTTEndUsage() == MQTT_SUCCESS);
+        }
+		break;
+
+		case MQTT_DONE:
+			// Wait for the user to release BUTTON2 or BUTTON3 and for at 
+			// least 1 second to pass before allowing another 
+			// email to be sent.  This is merely to prevent 
+			// accidental flooding of email boxes while 
+			// developing code.  Your application may wish to remove this.
+			if(1) {
+				if(TickGet() - WaitTime > TICK_SECOND)
+					MQTTState = MQTT_HOME;
+				}
+		break;
+	}
 }
 
 

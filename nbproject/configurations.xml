@@ -66,6 +66,7 @@
         <itemPath>net/DHCP.h</itemPath>
         <itemPath>net/ENC28J60.h</itemPath>
         <itemPath>net/DNS.h</itemPath>
+        <itemPath>net/MQTT.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f9" displayName="NVRAM" projectFiles="true">
         <itemPath>nvram/nvram.h</itemPath>
@@ -165,6 +166,7 @@
         <itemPath>net/ZeroconfHelper.c</itemPath>
         <itemPath>net/ZeroconfLinkLocal.c</itemPath>
         <itemPath>net/ZeroconfMulticastDNS.c</itemPath>
+        <itemPath>net/MQTT.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f3" displayName="NVRAM" projectFiles="true">
         <itemPath>nvram/nvram.c</itemPath>
