@@ -700,7 +700,7 @@ void HTTPPrint_cpufreq (void) {
 }
 
 void HTTPPrint_sensors (void) {
-    BYTE buff[16];
+    BYTE buff[64];
     double siv;
 	WORD countspm;
     BYTE firstone = 1;
