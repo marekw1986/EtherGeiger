@@ -11,6 +11,10 @@
             <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/CustomHTTPApp.c</file>
             <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/config/config.c</file>
             <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/nvram/nvram.c</file>
+            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/nvram/nvram.h</file>
+            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/uart/uart.c</file>
+            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/uart/uart.h</file>
+            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/bme280/bme280.c</file>
         </group>
     </open-files>
 </project-private>
