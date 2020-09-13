@@ -26,7 +26,6 @@ uint8_t check_BF(void);
 uint8_t	mpxLCD;
 
 static inline void data_dir_out(void) {
-    //Zerowanie zmiennych danych (D4..D7)
     mpxLCD	&= ~(1<<LCD_D7);
     mpxLCD	&= ~(1<<LCD_D6);
     mpxLCD	&= ~(1<<LCD_D5);
@@ -36,7 +35,6 @@ static inline void data_dir_out(void) {
 
 #if USE_RW
 static inline void data_dir_in(void) {
-    // PCF8574 wymaga ustawienia stanu wysokiego dla wejsc
     mpxLCD |= (1<<LCD_D7);
     mpxLCD |= (1<<LCD_D6);
     mpxLCD |= (1<<LCD_D5);
@@ -54,11 +52,7 @@ static inline void lcd_sendHalf(uint8_t data) {
 }
 
 #if USE_RW == 1
-//----------------------------------------------------------------------------------------
-//
-//		 Odczyt po³ówki bajtu z LCD (D4..D7)
-//
-//----------------------------------------------------------------------------------------
+
 static inline uint8_t lcd_readHalf(void)
 {
 	uint8_t result=0;
@@ -74,14 +68,8 @@ static inline uint8_t lcd_readHalf(void)
 }
 #endif
 
-//----------------------------------------------------------------------------------------
-//
-//		 Zapis bajtu do wyœwietlacza LCD
-//
-//----------------------------------------------------------------------------------------
 void _lcd_write_byte(unsigned char _data) {
 
-	// Ustawienie pinow portu LCD D4..D7 jako wyjscia
 	data_dir_out();
 
 	#if USE_RW == 1
@@ -116,12 +104,12 @@ uint8_t _lcd_read_byte(void) {
 
 	SET_E;
 
-	result = (lcd_readHalf() << 4);		// odczyt starszej czêœci bajtu z LCD D7..D4
+	result = (lcd_readHalf() << 4);	
 
 	CLR_E;
 
 	SET_E;
-	result |= lcd_readHalf();			// odczyt m³odszej czêœci bajtu z LCD D3..D0
+	result |= lcd_readHalf();
 	CLR_E;
 
 	return result;
@@ -172,13 +160,13 @@ void lcd_locate(uint8_t y, uint8_t x) {
 		case 0: y = LCD_LINE1; break;
 
 #if (LCD_ROWS>1)
-	    case 1: y = LCD_LINE2; break; // adres 1 znaku 2 wiersza
+	    case 1: y = LCD_LINE2; break;
 #endif
 #if (LCD_ROWS>2)
-    	case 2: y = LCD_LINE3; break; // adres 1 znaku 3 wiersza
+    	case 2: y = LCD_LINE3; break;
 #endif
 #if (LCD_ROWS>3)
-    	case 3: y = LCD_LINE4; break; // adres 1 znaku 4 wiersza
+    	case 3: y = LCD_LINE4; break;
 #endif
 	}
 
@@ -186,11 +174,6 @@ void lcd_locate(uint8_t y, uint8_t x) {
 }
 
 
-//----------------------------------------------------------------------------------------
-//
-//		Kasowanie ekranu wyœwietlacza
-//
-//----------------------------------------------------------------------------------------
 void lcd_cls(void) {
 
 	lcd_write_cmd( LCDC_CLS );
@@ -213,10 +196,8 @@ void lcd_home(void) {
 
 
 void lcd_init( void ) {
-    // zerowanie bufora danych
     mpxLCD = 0;
 
-    // wlaczenie podwietlenia
     //LCD_LED_ON;
 
     delay_ms(15);
@@ -262,11 +243,3 @@ void lcd_init( void ) {
 	// kasowanie ekranu
 	lcd_cls();
 }
-
-
-/*
-void lcd_LED(uint8_t _on) {
-
-}
-
-*/
