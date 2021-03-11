@@ -119,6 +119,7 @@ int main(int argc, char** argv) {
     EnableWDT();
     
     i2c_send_byte(0xFF, PCF8574_IO_ADDR);
+    init_ui();
     
     while (1) {
         
@@ -142,7 +143,8 @@ int main(int argc, char** argv) {
         }        
         
         handle_bme_read();
-        handle_io();
+        handle_ui();
+        lcd_handle();
         handle_usb_log();
         handle_mqtt();
     }

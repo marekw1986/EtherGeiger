@@ -6,6 +6,10 @@
                    projectFiles="true">
       <logicalFolder name="f5" displayName="BME280" projectFiles="true">
         <itemPath>bme280/bme280.h</itemPath>
+        <itemPath>btn/buttons.h</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f12" displayName="Buttons" projectFiles="true">
+        <itemPath>btn/buttons_i2c.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f11" displayName="Config" projectFiles="true">
         <itemPath>config/config.h</itemPath>
@@ -109,6 +113,9 @@
                    projectFiles="true">
       <logicalFolder name="f8" displayName="BME280" projectFiles="true">
         <itemPath>bme280/bme280.c</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f9" displayName="Buttons" projectFiles="true">
+        <itemPath>btn/buttons_i2c.c</itemPath>
       </logicalFolder>
       <logicalFolder name="f12" displayName="Config" projectFiles="true">
         <itemPath>config/config.c</itemPath>

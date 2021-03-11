@@ -16,7 +16,8 @@ typedef enum {DISP_TIME, DISP_MEASUREMENTS, DISP_CONFIG} disp_state_t;
 extern "C" {
 #endif
 
-void handle_io (void);
+void init_ui (void);
+void handle_ui (void);
 
 
 #ifdef	__cplusplus

@@ -30,4 +30,3 @@ void i2c_send_byte (uint8_t data, uint8_t address);
 #endif
 
 #endif	/* LCD_H */
-

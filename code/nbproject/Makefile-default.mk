@@ -30,12 +30,12 @@ ifeq ($(TYPE_IMAGE), DEBUG_RUN)
 IMAGE_TYPE=debug
 OUTPUT_SUFFIX=elf
 DEBUGGABLE_SUFFIX=elf
-FINAL_IMAGE=dist/${CND_CONF}/${IMAGE_TYPE}/EtherGeiger_v2_PIC32.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+FINAL_IMAGE=dist/${CND_CONF}/${IMAGE_TYPE}/code.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 else
 IMAGE_TYPE=production
 OUTPUT_SUFFIX=hex
 DEBUGGABLE_SUFFIX=elf
-FINAL_IMAGE=dist/${CND_CONF}/${IMAGE_TYPE}/EtherGeiger_v2_PIC32.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+FINAL_IMAGE=dist/${CND_CONF}/${IMAGE_TYPE}/code.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 endif
 
 ifeq ($(COMPARE_BUILD), true)
@@ -57,17 +57,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=bme280/bme280.c config/config.c delay/delay.c fatfs/ff.c fatfs/ffsystem.c fatfs/ffunicode.c fatfs/SPIFlash.c fatfs/diskio.c geiger/geiger.c lcd/i2c.c lcd/hd44780.c lcd/display.c MPFSImg2.c net/NBNS.c net/MPFS2.c net/IP.c net/ICMP.c net/HTTP2.c net/Helpers.c net/Hashes.c net/GenericTCPServer.c net/FTP.c net/ENC28J60.c net/DNS.c net/DHCP.c CustomHTTPApp.c net/BerkeleyAPI.c net/BigInt.c net/AutoIP.c net/ARP.c net/ARCFOUR.c net/Announce.c net/Random.c net/Reboot.c net/RSA.c net/SNTP.c net/SMTP.c net/SSL.c net/StackTsk.c net/TCP.c net/Telnet.c net/Tick.c net/UDP.c net/ZeroconfHelper.c net/ZeroconfLinkLocal.c net/ZeroconfMulticastDNS.c nvram/nvram.c time/time.c uart/uart.c usb_host_msd/usb_config.c usb_host_msd/usb_host.c usb_host_msd/usb_host_msd.c usb_host_msd/usb_host_msd_scsi.c usb_host_msd/event.c main.c common.c net/MQTT.c
+SOURCEFILES_QUOTED_IF_SPACED=bme280/bme280.c config/config.c delay/delay.c fatfs/ff.c fatfs/ffsystem.c fatfs/ffunicode.c fatfs/SPIFlash.c fatfs/diskio.c geiger/geiger.c lcd/i2c.c lcd/hd44780.c lcd/display.c MPFSImg2.c net/NBNS.c net/MPFS2.c net/IP.c net/ICMP.c net/HTTP2.c net/Helpers.c net/Hashes.c net/GenericTCPServer.c net/FTP.c net/ENC28J60.c net/DNS.c net/DHCP.c CustomHTTPApp.c net/BerkeleyAPI.c net/BigInt.c net/AutoIP.c net/ARP.c net/ARCFOUR.c net/Announce.c net/Random.c net/Reboot.c net/RSA.c net/SNTP.c net/SMTP.c net/SSL.c net/StackTsk.c net/TCP.c net/Telnet.c net/Tick.c net/UDP.c net/ZeroconfHelper.c net/ZeroconfLinkLocal.c net/ZeroconfMulticastDNS.c net/MQTT.c nvram/nvram.c time/time.c uart/uart.c usb_host_msd/usb_config.c usb_host_msd/usb_host.c usb_host_msd/usb_host_msd.c usb_host_msd/usb_host_msd_scsi.c usb_host_msd/event.c main.c common.c btn/buttons_i2c.c
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/bme280/bme280.o ${OBJECTDIR}/config/config.o ${OBJECTDIR}/delay/delay.o ${OBJECTDIR}/fatfs/ff.o ${OBJECTDIR}/fatfs/ffsystem.o ${OBJECTDIR}/fatfs/ffunicode.o ${OBJECTDIR}/fatfs/SPIFlash.o ${OBJECTDIR}/fatfs/diskio.o ${OBJECTDIR}/geiger/geiger.o ${OBJECTDIR}/lcd/i2c.o ${OBJECTDIR}/lcd/hd44780.o ${OBJECTDIR}/lcd/display.o ${OBJECTDIR}/MPFSImg2.o ${OBJECTDIR}/net/NBNS.o ${OBJECTDIR}/net/MPFS2.o ${OBJECTDIR}/net/IP.o ${OBJECTDIR}/net/ICMP.o ${OBJECTDIR}/net/HTTP2.o ${OBJECTDIR}/net/Helpers.o ${OBJECTDIR}/net/Hashes.o ${OBJECTDIR}/net/GenericTCPServer.o ${OBJECTDIR}/net/FTP.o ${OBJECTDIR}/net/ENC28J60.o ${OBJECTDIR}/net/DNS.o ${OBJECTDIR}/net/DHCP.o ${OBJECTDIR}/CustomHTTPApp.o ${OBJECTDIR}/net/BerkeleyAPI.o ${OBJECTDIR}/net/BigInt.o ${OBJECTDIR}/net/AutoIP.o ${OBJECTDIR}/net/ARP.o ${OBJECTDIR}/net/ARCFOUR.o ${OBJECTDIR}/net/Announce.o ${OBJECTDIR}/net/Random.o ${OBJECTDIR}/net/Reboot.o ${OBJECTDIR}/net/RSA.o ${OBJECTDIR}/net/SNTP.o ${OBJECTDIR}/net/SMTP.o ${OBJECTDIR}/net/SSL.o ${OBJECTDIR}/net/StackTsk.o ${OBJECTDIR}/net/TCP.o ${OBJECTDIR}/net/Telnet.o ${OBJECTDIR}/net/Tick.o ${OBJECTDIR}/net/UDP.o ${OBJECTDIR}/net/ZeroconfHelper.o ${OBJECTDIR}/net/ZeroconfLinkLocal.o ${OBJECTDIR}/net/ZeroconfMulticastDNS.o ${OBJECTDIR}/nvram/nvram.o ${OBJECTDIR}/time/time.o ${OBJECTDIR}/uart/uart.o ${OBJECTDIR}/usb_host_msd/usb_config.o ${OBJECTDIR}/usb_host_msd/usb_host.o ${OBJECTDIR}/usb_host_msd/usb_host_msd.o ${OBJECTDIR}/usb_host_msd/usb_host_msd_scsi.o ${OBJECTDIR}/usb_host_msd/event.o ${OBJECTDIR}/main.o ${OBJECTDIR}/common.o ${OBJECTDIR}/net/MQTT.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/bme280/bme280.o.d ${OBJECTDIR}/config/config.o.d ${OBJECTDIR}/delay/delay.o.d ${OBJECTDIR}/fatfs/ff.o.d ${OBJECTDIR}/fatfs/ffsystem.o.d ${OBJECTDIR}/fatfs/ffunicode.o.d ${OBJECTDIR}/fatfs/SPIFlash.o.d ${OBJECTDIR}/fatfs/diskio.o.d ${OBJECTDIR}/geiger/geiger.o.d ${OBJECTDIR}/lcd/i2c.o.d ${OBJECTDIR}/lcd/hd44780.o.d ${OBJECTDIR}/lcd/display.o.d ${OBJECTDIR}/MPFSImg2.o.d ${OBJECTDIR}/net/NBNS.o.d ${OBJECTDIR}/net/MPFS2.o.d ${OBJECTDIR}/net/IP.o.d ${OBJECTDIR}/net/ICMP.o.d ${OBJECTDIR}/net/HTTP2.o.d ${OBJECTDIR}/net/Helpers.o.d ${OBJECTDIR}/net/Hashes.o.d ${OBJECTDIR}/net/GenericTCPServer.o.d ${OBJECTDIR}/net/FTP.o.d ${OBJECTDIR}/net/ENC28J60.o.d ${OBJECTDIR}/net/DNS.o.d ${OBJECTDIR}/net/DHCP.o.d ${OBJECTDIR}/CustomHTTPApp.o.d ${OBJECTDIR}/net/BerkeleyAPI.o.d ${OBJECTDIR}/net/BigInt.o.d ${OBJECTDIR}/net/AutoIP.o.d ${OBJECTDIR}/net/ARP.o.d ${OBJECTDIR}/net/ARCFOUR.o.d ${OBJECTDIR}/net/Announce.o.d ${OBJECTDIR}/net/Random.o.d ${OBJECTDIR}/net/Reboot.o.d ${OBJECTDIR}/net/RSA.o.d ${OBJECTDIR}/net/SNTP.o.d ${OBJECTDIR}/net/SMTP.o.d ${OBJECTDIR}/net/SSL.o.d ${OBJECTDIR}/net/StackTsk.o.d ${OBJECTDIR}/net/TCP.o.d ${OBJECTDIR}/net/Telnet.o.d ${OBJECTDIR}/net/Tick.o.d ${OBJECTDIR}/net/UDP.o.d ${OBJECTDIR}/net/ZeroconfHelper.o.d ${OBJECTDIR}/net/ZeroconfLinkLocal.o.d ${OBJECTDIR}/net/ZeroconfMulticastDNS.o.d ${OBJECTDIR}/nvram/nvram.o.d ${OBJECTDIR}/time/time.o.d ${OBJECTDIR}/uart/uart.o.d ${OBJECTDIR}/usb_host_msd/usb_config.o.d ${OBJECTDIR}/usb_host_msd/usb_host.o.d ${OBJECTDIR}/usb_host_msd/usb_host_msd.o.d ${OBJECTDIR}/usb_host_msd/usb_host_msd_scsi.o.d ${OBJECTDIR}/usb_host_msd/event.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/common.o.d ${OBJECTDIR}/net/MQTT.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/bme280/bme280.o ${OBJECTDIR}/config/config.o ${OBJECTDIR}/delay/delay.o ${OBJECTDIR}/fatfs/ff.o ${OBJECTDIR}/fatfs/ffsystem.o ${OBJECTDIR}/fatfs/ffunicode.o ${OBJECTDIR}/fatfs/SPIFlash.o ${OBJECTDIR}/fatfs/diskio.o ${OBJECTDIR}/geiger/geiger.o ${OBJECTDIR}/lcd/i2c.o ${OBJECTDIR}/lcd/hd44780.o ${OBJECTDIR}/lcd/display.o ${OBJECTDIR}/MPFSImg2.o ${OBJECTDIR}/net/NBNS.o ${OBJECTDIR}/net/MPFS2.o ${OBJECTDIR}/net/IP.o ${OBJECTDIR}/net/ICMP.o ${OBJECTDIR}/net/HTTP2.o ${OBJECTDIR}/net/Helpers.o ${OBJECTDIR}/net/Hashes.o ${OBJECTDIR}/net/GenericTCPServer.o ${OBJECTDIR}/net/FTP.o ${OBJECTDIR}/net/ENC28J60.o ${OBJECTDIR}/net/DNS.o ${OBJECTDIR}/net/DHCP.o ${OBJECTDIR}/CustomHTTPApp.o ${OBJECTDIR}/net/BerkeleyAPI.o ${OBJECTDIR}/net/BigInt.o ${OBJECTDIR}/net/AutoIP.o ${OBJECTDIR}/net/ARP.o ${OBJECTDIR}/net/ARCFOUR.o ${OBJECTDIR}/net/Announce.o ${OBJECTDIR}/net/Random.o ${OBJECTDIR}/net/Reboot.o ${OBJECTDIR}/net/RSA.o ${OBJECTDIR}/net/SNTP.o ${OBJECTDIR}/net/SMTP.o ${OBJECTDIR}/net/SSL.o ${OBJECTDIR}/net/StackTsk.o ${OBJECTDIR}/net/TCP.o ${OBJECTDIR}/net/Telnet.o ${OBJECTDIR}/net/Tick.o ${OBJECTDIR}/net/UDP.o ${OBJECTDIR}/net/ZeroconfHelper.o ${OBJECTDIR}/net/ZeroconfLinkLocal.o ${OBJECTDIR}/net/ZeroconfMulticastDNS.o ${OBJECTDIR}/net/MQTT.o ${OBJECTDIR}/nvram/nvram.o ${OBJECTDIR}/time/time.o ${OBJECTDIR}/uart/uart.o ${OBJECTDIR}/usb_host_msd/usb_config.o ${OBJECTDIR}/usb_host_msd/usb_host.o ${OBJECTDIR}/usb_host_msd/usb_host_msd.o ${OBJECTDIR}/usb_host_msd/usb_host_msd_scsi.o ${OBJECTDIR}/usb_host_msd/event.o ${OBJECTDIR}/main.o ${OBJECTDIR}/common.o ${OBJECTDIR}/btn/buttons_i2c.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/bme280/bme280.o.d ${OBJECTDIR}/config/config.o.d ${OBJECTDIR}/delay/delay.o.d ${OBJECTDIR}/fatfs/ff.o.d ${OBJECTDIR}/fatfs/ffsystem.o.d ${OBJECTDIR}/fatfs/ffunicode.o.d ${OBJECTDIR}/fatfs/SPIFlash.o.d ${OBJECTDIR}/fatfs/diskio.o.d ${OBJECTDIR}/geiger/geiger.o.d ${OBJECTDIR}/lcd/i2c.o.d ${OBJECTDIR}/lcd/hd44780.o.d ${OBJECTDIR}/lcd/display.o.d ${OBJECTDIR}/MPFSImg2.o.d ${OBJECTDIR}/net/NBNS.o.d ${OBJECTDIR}/net/MPFS2.o.d ${OBJECTDIR}/net/IP.o.d ${OBJECTDIR}/net/ICMP.o.d ${OBJECTDIR}/net/HTTP2.o.d ${OBJECTDIR}/net/Helpers.o.d ${OBJECTDIR}/net/Hashes.o.d ${OBJECTDIR}/net/GenericTCPServer.o.d ${OBJECTDIR}/net/FTP.o.d ${OBJECTDIR}/net/ENC28J60.o.d ${OBJECTDIR}/net/DNS.o.d ${OBJECTDIR}/net/DHCP.o.d ${OBJECTDIR}/CustomHTTPApp.o.d ${OBJECTDIR}/net/BerkeleyAPI.o.d ${OBJECTDIR}/net/BigInt.o.d ${OBJECTDIR}/net/AutoIP.o.d ${OBJECTDIR}/net/ARP.o.d ${OBJECTDIR}/net/ARCFOUR.o.d ${OBJECTDIR}/net/Announce.o.d ${OBJECTDIR}/net/Random.o.d ${OBJECTDIR}/net/Reboot.o.d ${OBJECTDIR}/net/RSA.o.d ${OBJECTDIR}/net/SNTP.o.d ${OBJECTDIR}/net/SMTP.o.d ${OBJECTDIR}/net/SSL.o.d ${OBJECTDIR}/net/StackTsk.o.d ${OBJECTDIR}/net/TCP.o.d ${OBJECTDIR}/net/Telnet.o.d ${OBJECTDIR}/net/Tick.o.d ${OBJECTDIR}/net/UDP.o.d ${OBJECTDIR}/net/ZeroconfHelper.o.d ${OBJECTDIR}/net/ZeroconfLinkLocal.o.d ${OBJECTDIR}/net/ZeroconfMulticastDNS.o.d ${OBJECTDIR}/net/MQTT.o.d ${OBJECTDIR}/nvram/nvram.o.d ${OBJECTDIR}/time/time.o.d ${OBJECTDIR}/uart/uart.o.d ${OBJECTDIR}/usb_host_msd/usb_config.o.d ${OBJECTDIR}/usb_host_msd/usb_host.o.d ${OBJECTDIR}/usb_host_msd/usb_host_msd.o.d ${OBJECTDIR}/usb_host_msd/usb_host_msd_scsi.o.d ${OBJECTDIR}/usb_host_msd/event.o.d ${OBJECTDIR}/main.o.d ${OBJECTDIR}/common.o.d ${OBJECTDIR}/btn/buttons_i2c.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/bme280/bme280.o ${OBJECTDIR}/config/config.o ${OBJECTDIR}/delay/delay.o ${OBJECTDIR}/fatfs/ff.o ${OBJECTDIR}/fatfs/ffsystem.o ${OBJECTDIR}/fatfs/ffunicode.o ${OBJECTDIR}/fatfs/SPIFlash.o ${OBJECTDIR}/fatfs/diskio.o ${OBJECTDIR}/geiger/geiger.o ${OBJECTDIR}/lcd/i2c.o ${OBJECTDIR}/lcd/hd44780.o ${OBJECTDIR}/lcd/display.o ${OBJECTDIR}/MPFSImg2.o ${OBJECTDIR}/net/NBNS.o ${OBJECTDIR}/net/MPFS2.o ${OBJECTDIR}/net/IP.o ${OBJECTDIR}/net/ICMP.o ${OBJECTDIR}/net/HTTP2.o ${OBJECTDIR}/net/Helpers.o ${OBJECTDIR}/net/Hashes.o ${OBJECTDIR}/net/GenericTCPServer.o ${OBJECTDIR}/net/FTP.o ${OBJECTDIR}/net/ENC28J60.o ${OBJECTDIR}/net/DNS.o ${OBJECTDIR}/net/DHCP.o ${OBJECTDIR}/CustomHTTPApp.o ${OBJECTDIR}/net/BerkeleyAPI.o ${OBJECTDIR}/net/BigInt.o ${OBJECTDIR}/net/AutoIP.o ${OBJECTDIR}/net/ARP.o ${OBJECTDIR}/net/ARCFOUR.o ${OBJECTDIR}/net/Announce.o ${OBJECTDIR}/net/Random.o ${OBJECTDIR}/net/Reboot.o ${OBJECTDIR}/net/RSA.o ${OBJECTDIR}/net/SNTP.o ${OBJECTDIR}/net/SMTP.o ${OBJECTDIR}/net/SSL.o ${OBJECTDIR}/net/StackTsk.o ${OBJECTDIR}/net/TCP.o ${OBJECTDIR}/net/Telnet.o ${OBJECTDIR}/net/Tick.o ${OBJECTDIR}/net/UDP.o ${OBJECTDIR}/net/ZeroconfHelper.o ${OBJECTDIR}/net/ZeroconfLinkLocal.o ${OBJECTDIR}/net/ZeroconfMulticastDNS.o ${OBJECTDIR}/nvram/nvram.o ${OBJECTDIR}/time/time.o ${OBJECTDIR}/uart/uart.o ${OBJECTDIR}/usb_host_msd/usb_config.o ${OBJECTDIR}/usb_host_msd/usb_host.o ${OBJECTDIR}/usb_host_msd/usb_host_msd.o ${OBJECTDIR}/usb_host_msd/usb_host_msd_scsi.o ${OBJECTDIR}/usb_host_msd/event.o ${OBJECTDIR}/main.o ${OBJECTDIR}/common.o ${OBJECTDIR}/net/MQTT.o
+OBJECTFILES=${OBJECTDIR}/bme280/bme280.o ${OBJECTDIR}/config/config.o ${OBJECTDIR}/delay/delay.o ${OBJECTDIR}/fatfs/ff.o ${OBJECTDIR}/fatfs/ffsystem.o ${OBJECTDIR}/fatfs/ffunicode.o ${OBJECTDIR}/fatfs/SPIFlash.o ${OBJECTDIR}/fatfs/diskio.o ${OBJECTDIR}/geiger/geiger.o ${OBJECTDIR}/lcd/i2c.o ${OBJECTDIR}/lcd/hd44780.o ${OBJECTDIR}/lcd/display.o ${OBJECTDIR}/MPFSImg2.o ${OBJECTDIR}/net/NBNS.o ${OBJECTDIR}/net/MPFS2.o ${OBJECTDIR}/net/IP.o ${OBJECTDIR}/net/ICMP.o ${OBJECTDIR}/net/HTTP2.o ${OBJECTDIR}/net/Helpers.o ${OBJECTDIR}/net/Hashes.o ${OBJECTDIR}/net/GenericTCPServer.o ${OBJECTDIR}/net/FTP.o ${OBJECTDIR}/net/ENC28J60.o ${OBJECTDIR}/net/DNS.o ${OBJECTDIR}/net/DHCP.o ${OBJECTDIR}/CustomHTTPApp.o ${OBJECTDIR}/net/BerkeleyAPI.o ${OBJECTDIR}/net/BigInt.o ${OBJECTDIR}/net/AutoIP.o ${OBJECTDIR}/net/ARP.o ${OBJECTDIR}/net/ARCFOUR.o ${OBJECTDIR}/net/Announce.o ${OBJECTDIR}/net/Random.o ${OBJECTDIR}/net/Reboot.o ${OBJECTDIR}/net/RSA.o ${OBJECTDIR}/net/SNTP.o ${OBJECTDIR}/net/SMTP.o ${OBJECTDIR}/net/SSL.o ${OBJECTDIR}/net/StackTsk.o ${OBJECTDIR}/net/TCP.o ${OBJECTDIR}/net/Telnet.o ${OBJECTDIR}/net/Tick.o ${OBJECTDIR}/net/UDP.o ${OBJECTDIR}/net/ZeroconfHelper.o ${OBJECTDIR}/net/ZeroconfLinkLocal.o ${OBJECTDIR}/net/ZeroconfMulticastDNS.o ${OBJECTDIR}/net/MQTT.o ${OBJECTDIR}/nvram/nvram.o ${OBJECTDIR}/time/time.o ${OBJECTDIR}/uart/uart.o ${OBJECTDIR}/usb_host_msd/usb_config.o ${OBJECTDIR}/usb_host_msd/usb_host.o ${OBJECTDIR}/usb_host_msd/usb_host_msd.o ${OBJECTDIR}/usb_host_msd/usb_host_msd_scsi.o ${OBJECTDIR}/usb_host_msd/event.o ${OBJECTDIR}/main.o ${OBJECTDIR}/common.o ${OBJECTDIR}/btn/buttons_i2c.o
 
 # Source Files
-SOURCEFILES=bme280/bme280.c config/config.c delay/delay.c fatfs/ff.c fatfs/ffsystem.c fatfs/ffunicode.c fatfs/SPIFlash.c fatfs/diskio.c geiger/geiger.c lcd/i2c.c lcd/hd44780.c lcd/display.c MPFSImg2.c net/NBNS.c net/MPFS2.c net/IP.c net/ICMP.c net/HTTP2.c net/Helpers.c net/Hashes.c net/GenericTCPServer.c net/FTP.c net/ENC28J60.c net/DNS.c net/DHCP.c CustomHTTPApp.c net/BerkeleyAPI.c net/BigInt.c net/AutoIP.c net/ARP.c net/ARCFOUR.c net/Announce.c net/Random.c net/Reboot.c net/RSA.c net/SNTP.c net/SMTP.c net/SSL.c net/StackTsk.c net/TCP.c net/Telnet.c net/Tick.c net/UDP.c net/ZeroconfHelper.c net/ZeroconfLinkLocal.c net/ZeroconfMulticastDNS.c nvram/nvram.c time/time.c uart/uart.c usb_host_msd/usb_config.c usb_host_msd/usb_host.c usb_host_msd/usb_host_msd.c usb_host_msd/usb_host_msd_scsi.c usb_host_msd/event.c main.c common.c net/MQTT.c
+SOURCEFILES=bme280/bme280.c config/config.c delay/delay.c fatfs/ff.c fatfs/ffsystem.c fatfs/ffunicode.c fatfs/SPIFlash.c fatfs/diskio.c geiger/geiger.c lcd/i2c.c lcd/hd44780.c lcd/display.c MPFSImg2.c net/NBNS.c net/MPFS2.c net/IP.c net/ICMP.c net/HTTP2.c net/Helpers.c net/Hashes.c net/GenericTCPServer.c net/FTP.c net/ENC28J60.c net/DNS.c net/DHCP.c CustomHTTPApp.c net/BerkeleyAPI.c net/BigInt.c net/AutoIP.c net/ARP.c net/ARCFOUR.c net/Announce.c net/Random.c net/Reboot.c net/RSA.c net/SNTP.c net/SMTP.c net/SSL.c net/StackTsk.c net/TCP.c net/Telnet.c net/Tick.c net/UDP.c net/ZeroconfHelper.c net/ZeroconfLinkLocal.c net/ZeroconfMulticastDNS.c net/MQTT.c nvram/nvram.c time/time.c uart/uart.c usb_host_msd/usb_config.c usb_host_msd/usb_host.c usb_host_msd/usb_host_msd.c usb_host_msd/usb_host_msd_scsi.c usb_host_msd/event.c main.c common.c btn/buttons_i2c.c
 
 
 CFLAGS=
@@ -87,7 +87,7 @@ FIXDEPS=fixDeps
 ifneq ($(INFORMATION_MESSAGE), )
 	@echo $(INFORMATION_MESSAGE)
 endif
-	${MAKE}  -f nbproject/Makefile-default.mk dist/${CND_CONF}/${IMAGE_TYPE}/EtherGeiger_v2_PIC32.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+	${MAKE}  -f nbproject/Makefile-default.mk dist/${CND_CONF}/${IMAGE_TYPE}/code.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 
 MP_PROCESSOR_OPTION=32MX270F256B
 MP_LINKER_FILE_OPTION=
@@ -382,6 +382,12 @@ ${OBJECTDIR}/net/ZeroconfMulticastDNS.o: net/ZeroconfMulticastDNS.c  nbproject/M
 	@${RM} ${OBJECTDIR}/net/ZeroconfMulticastDNS.o 
 	@${FIXDEPS} "${OBJECTDIR}/net/ZeroconfMulticastDNS.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -O1 -D_SUPPRESS_PLIB_WARNING -DSYSCLK=40000000L -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -MMD -MF "${OBJECTDIR}/net/ZeroconfMulticastDNS.o.d" -o ${OBJECTDIR}/net/ZeroconfMulticastDNS.o net/ZeroconfMulticastDNS.c    -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD) 
 	
+${OBJECTDIR}/net/MQTT.o: net/MQTT.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/net" 
+	@${RM} ${OBJECTDIR}/net/MQTT.o.d 
+	@${RM} ${OBJECTDIR}/net/MQTT.o 
+	@${FIXDEPS} "${OBJECTDIR}/net/MQTT.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -O1 -D_SUPPRESS_PLIB_WARNING -DSYSCLK=40000000L -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -MMD -MF "${OBJECTDIR}/net/MQTT.o.d" -o ${OBJECTDIR}/net/MQTT.o net/MQTT.c    -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD) 
+	
 ${OBJECTDIR}/nvram/nvram.o: nvram/nvram.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}/nvram" 
 	@${RM} ${OBJECTDIR}/nvram/nvram.o.d 
@@ -442,11 +448,11 @@ ${OBJECTDIR}/common.o: common.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/common.o 
 	@${FIXDEPS} "${OBJECTDIR}/common.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -O1 -D_SUPPRESS_PLIB_WARNING -DSYSCLK=40000000L -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -MMD -MF "${OBJECTDIR}/common.o.d" -o ${OBJECTDIR}/common.o common.c    -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/net/MQTT.o: net/MQTT.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} "${OBJECTDIR}/net" 
-	@${RM} ${OBJECTDIR}/net/MQTT.o.d 
-	@${RM} ${OBJECTDIR}/net/MQTT.o 
-	@${FIXDEPS} "${OBJECTDIR}/net/MQTT.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -O1 -D_SUPPRESS_PLIB_WARNING -DSYSCLK=40000000L -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -MMD -MF "${OBJECTDIR}/net/MQTT.o.d" -o ${OBJECTDIR}/net/MQTT.o net/MQTT.c    -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD) 
+${OBJECTDIR}/btn/buttons_i2c.o: btn/buttons_i2c.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/btn" 
+	@${RM} ${OBJECTDIR}/btn/buttons_i2c.o.d 
+	@${RM} ${OBJECTDIR}/btn/buttons_i2c.o 
+	@${FIXDEPS} "${OBJECTDIR}/btn/buttons_i2c.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_PK3=1  -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -O1 -D_SUPPRESS_PLIB_WARNING -DSYSCLK=40000000L -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -MMD -MF "${OBJECTDIR}/btn/buttons_i2c.o.d" -o ${OBJECTDIR}/btn/buttons_i2c.o btn/buttons_i2c.c    -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD) 
 	
 else
 ${OBJECTDIR}/bme280/bme280.o: bme280/bme280.c  nbproject/Makefile-${CND_CONF}.mk
@@ -725,6 +731,12 @@ ${OBJECTDIR}/net/ZeroconfMulticastDNS.o: net/ZeroconfMulticastDNS.c  nbproject/M
 	@${RM} ${OBJECTDIR}/net/ZeroconfMulticastDNS.o 
 	@${FIXDEPS} "${OBJECTDIR}/net/ZeroconfMulticastDNS.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -O1 -D_SUPPRESS_PLIB_WARNING -DSYSCLK=40000000L -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -MMD -MF "${OBJECTDIR}/net/ZeroconfMulticastDNS.o.d" -o ${OBJECTDIR}/net/ZeroconfMulticastDNS.o net/ZeroconfMulticastDNS.c    -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD) 
 	
+${OBJECTDIR}/net/MQTT.o: net/MQTT.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/net" 
+	@${RM} ${OBJECTDIR}/net/MQTT.o.d 
+	@${RM} ${OBJECTDIR}/net/MQTT.o 
+	@${FIXDEPS} "${OBJECTDIR}/net/MQTT.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -O1 -D_SUPPRESS_PLIB_WARNING -DSYSCLK=40000000L -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -MMD -MF "${OBJECTDIR}/net/MQTT.o.d" -o ${OBJECTDIR}/net/MQTT.o net/MQTT.c    -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD) 
+	
 ${OBJECTDIR}/nvram/nvram.o: nvram/nvram.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}/nvram" 
 	@${RM} ${OBJECTDIR}/nvram/nvram.o.d 
@@ -785,11 +797,11 @@ ${OBJECTDIR}/common.o: common.c  nbproject/Makefile-${CND_CONF}.mk
 	@${RM} ${OBJECTDIR}/common.o 
 	@${FIXDEPS} "${OBJECTDIR}/common.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -O1 -D_SUPPRESS_PLIB_WARNING -DSYSCLK=40000000L -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -MMD -MF "${OBJECTDIR}/common.o.d" -o ${OBJECTDIR}/common.o common.c    -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD) 
 	
-${OBJECTDIR}/net/MQTT.o: net/MQTT.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} "${OBJECTDIR}/net" 
-	@${RM} ${OBJECTDIR}/net/MQTT.o.d 
-	@${RM} ${OBJECTDIR}/net/MQTT.o 
-	@${FIXDEPS} "${OBJECTDIR}/net/MQTT.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -O1 -D_SUPPRESS_PLIB_WARNING -DSYSCLK=40000000L -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -MMD -MF "${OBJECTDIR}/net/MQTT.o.d" -o ${OBJECTDIR}/net/MQTT.o net/MQTT.c    -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD) 
+${OBJECTDIR}/btn/buttons_i2c.o: btn/buttons_i2c.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} "${OBJECTDIR}/btn" 
+	@${RM} ${OBJECTDIR}/btn/buttons_i2c.o.d 
+	@${RM} ${OBJECTDIR}/btn/buttons_i2c.o 
+	@${FIXDEPS} "${OBJECTDIR}/btn/buttons_i2c.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -O1 -D_SUPPRESS_PLIB_WARNING -DSYSCLK=40000000L -D_DISABLE_OPENADC10_CONFIGPORT_WARNING -MMD -MF "${OBJECTDIR}/btn/buttons_i2c.o.d" -o ${OBJECTDIR}/btn/buttons_i2c.o btn/buttons_i2c.c    -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD) 
 	
 endif
 
@@ -802,15 +814,15 @@ endif
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: link
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-dist/${CND_CONF}/${IMAGE_TYPE}/EtherGeiger_v2_PIC32.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk    
+dist/${CND_CONF}/${IMAGE_TYPE}/code.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk    
 	@${MKDIR} dist/${CND_CONF}/${IMAGE_TYPE} 
-	${MP_CC} $(MP_EXTRA_LD_PRE) -g -mdebugger -D__MPLAB_DEBUGGER_PK3=1 -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/EtherGeiger_v2_PIC32.${IMAGE_TYPE}.${OUTPUT_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}          -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD)   -mreserve=data@0x0:0x1FC -mreserve=boot@0x1FC00490:0x1FC00BEF  -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=__MPLAB_DEBUG=1,--defsym=__DEBUG=1,-D=__DEBUG_D,--defsym=__MPLAB_DEBUGGER_PK3=1,--defsym=_min_heap_size=2048,--no-code-in-dinit,--no-dinit-in-serial-mem,-Map="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map",--memorysummary,dist/${CND_CONF}/${IMAGE_TYPE}/memoryfile.xml
+	${MP_CC} $(MP_EXTRA_LD_PRE) -g -mdebugger -D__MPLAB_DEBUGGER_PK3=1 -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/code.${IMAGE_TYPE}.${OUTPUT_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}          -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD)   -mreserve=data@0x0:0x1FC -mreserve=boot@0x1FC00490:0x1FC00BEF  -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=__MPLAB_DEBUG=1,--defsym=__DEBUG=1,-D=__DEBUG_D,--defsym=__MPLAB_DEBUGGER_PK3=1,--defsym=_min_heap_size=2048,--no-code-in-dinit,--no-dinit-in-serial-mem,-Map="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map",--memorysummary,dist/${CND_CONF}/${IMAGE_TYPE}/memoryfile.xml
 	
 else
-dist/${CND_CONF}/${IMAGE_TYPE}/EtherGeiger_v2_PIC32.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk   
+dist/${CND_CONF}/${IMAGE_TYPE}/code.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk   
 	@${MKDIR} dist/${CND_CONF}/${IMAGE_TYPE} 
-	${MP_CC} $(MP_EXTRA_LD_PRE)  -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/EtherGeiger_v2_PIC32.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}          -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD)  -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=_min_heap_size=2048,--no-code-in-dinit,--no-dinit-in-serial-mem,-Map="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map",--memorysummary,dist/${CND_CONF}/${IMAGE_TYPE}/memoryfile.xml
-	${MP_CC_DIR}/xc32-bin2hex dist/${CND_CONF}/${IMAGE_TYPE}/EtherGeiger_v2_PIC32.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX} 
+	${MP_CC} $(MP_EXTRA_LD_PRE)  -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/code.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}          -DXPRJ_default=$(CND_CONF)  -no-legacy-libc  $(COMPARISON_BUILD)  -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=_min_heap_size=2048,--no-code-in-dinit,--no-dinit-in-serial-mem,-Map="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map",--memorysummary,dist/${CND_CONF}/${IMAGE_TYPE}/memoryfile.xml
+	${MP_CC_DIR}/xc32-bin2hex dist/${CND_CONF}/${IMAGE_TYPE}/code.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX} 
 endif
 
 

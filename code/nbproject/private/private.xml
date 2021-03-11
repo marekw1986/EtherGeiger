@@ -3,18 +3,12 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/main.c</file>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/lcd/display.h</file>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/lcd/display.c</file>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/TCPIPConfig.h</file>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/GenericTypeDefs.h</file>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/CustomHTTPApp.c</file>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/config/config.c</file>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/nvram/nvram.c</file>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/nvram/nvram.h</file>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/uart/uart.c</file>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/uart/uart.h</file>
-            <file>file:/home/marek/Dropbox/Programowanie/Michrochip_PIC/EtherGeiger_v2_PIC32/bme280/bme280.c</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/time/time.c</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/lcd/i2c.h</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/geiger/geiger.c</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/main.c</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/lcd/display.c</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/lcd/i2c.c</file>
         </group>
     </open-files>
 </project-private>

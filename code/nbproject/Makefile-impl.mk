@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=EtherGeiger_v2_PIC32
+PROJECTNAME=code
 
 # Active Configuration
 DEFAULTCONF=default

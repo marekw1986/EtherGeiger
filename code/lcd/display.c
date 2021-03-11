@@ -6,6 +6,7 @@
 #include "../common.h"
 #include "../geiger/geiger.h"
 #include "../config/config.h"
+#include "../btn/buttons_i2c.h"
 
 #define KEY_1 3
 #define KEY_2 2
@@ -15,14 +16,29 @@
 disp_state_t disp_state = DISP_MEASUREMENTS;
 uint32_t backlight_timer = 0;
 
+uint8_t keys;
+static button_t key1, key2, key3, key4;
+
 
 static void disp_time_process (uint8_t now);
 static void disp_measurements_process (uint8_t now);
 static void disp_config_process (uint8_t now);
 static void backlight_on (void);
+void key1_func (void);
+void key2_func (void);
+void key3_func (void);
+void key4_func (void);
 
-void handle_io (void) {
-    uint8_t keys;
+
+void init_ui (void) {
+    button_init(&key1, &keys, (1 << KEY_1), &key1_func, NULL);
+    button_init(&key2, &keys, (1 << KEY_2), &key2_func, NULL);
+    button_init(&key3, &keys, (1 << KEY_3), &key3_func, NULL);
+    button_init(&key4, &keys, (1 << KEY_4), &key4_func, NULL);
+}
+
+
+void handle_ui (void) {
     static uint32_t keys_timer = 0; 
     
     switch(disp_state) {
@@ -42,6 +58,13 @@ void handle_io (void) {
         break;
     }
     
+    keys = i2c_rcv_byte(PCF8574_IO_ADDR);
+    button_handle(&key1);
+    button_handle(&key2);
+    button_handle(&key3);
+    button_handle(&key4);
+    
+    /*
     if ( (uint32_t)(millis()-keys_timer) > 50 ) {
         keys = i2c_rcv_byte(PCF8574_IO_ADDR);
         keys_timer = millis();
@@ -65,6 +88,7 @@ void handle_io (void) {
         }
         
     }
+    */
     
     //turn off backlight automatically
     if (backlight_timer && ((uint32_t)(millis()-backlight_timer) > 5000 ) ) {
@@ -193,4 +217,30 @@ void disp_config_process (uint8_t now) {
 void backlight_on (void) {
     i2c_send_byte(0xEF, PCF8574_IO_ADDR);
     backlight_timer = millis();
+}
+
+
+void key1_func (void) {
+    backlight_on();
+    disp_state = DISP_TIME;
+    disp_time_process(1);    
+}
+
+
+void key2_func (void) {
+    backlight_on();
+    disp_state = DISP_MEASUREMENTS;
+    disp_measurements_process(1);    
+}
+
+
+void key3_func (void) {
+    backlight_on();
+    disp_state = DISP_CONFIG;
+    disp_config_process(1);    
+}
+
+
+void key4_func (void) {
+    backlight_on();    
 }
