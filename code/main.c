@@ -127,6 +127,7 @@ int main(int argc, char** argv) {
         StackApplications();
         UART_RX_STR_EVENT(buffer);
         GenericTCPServer();
+        MQTTTask();
         
         USBTasks();
         if ((uint32_t)(millis()-disk_timer) >= 10) {
@@ -239,6 +240,15 @@ void handle_usb_log (void) {
 
 void handle_mqtt(void) {
     
+#define REQ_TIMEOUT_CYCLES  100
+    
+    static char server[] = "192.168.1.105";
+    static char connectid[] = "d:atlantis:ethergeiger:1";
+    static char username[] = "use-token-auth";
+    static char password[] = "secretpassword";
+    static char payload[] = "Hello World!!!!!!!!!!!!";
+    static uint16_t RequestTimeoutCounter = 0;
+    
 	static enum	{
 		MQTT_HOME = 0,
 		MQTT_BEGIN,
@@ -256,9 +266,11 @@ void handle_mqtt(void) {
        
 	switch(MQTTState)	{
 		case MQTT_HOME:
-        if((uint32_t)(millis()-mqtt_timer) > 60000) {
+        if((uint32_t)(millis()-mqtt_timer) > 5000) {
             // Start sending to MQTT server
+            printf("MQTT begin \n");
             mqtt_timer = millis();
+            RequestTimeoutCounter = 0;
             MQTTState++;
 		}
 		break;
@@ -269,38 +281,47 @@ void handle_mqtt(void) {
             // memory until MQTTIsBusy() returns FALSE.  To 
             // guarantee that the C compiler does not reuse this 
             // memory, you must allocate the strings as static.
-            MQTTClient.Server.szRAM = "192.168.1.95";	// MQTT server address
-            MQTTClient.ConnectId.szRAM = "d:atlantis:ethergeiger:1";
-            MQTTClient.Username.szRAM = "use-token-auth";
-            MQTTClient.Password.szRAM = "secretpassword";
+            MQTTClient.Server.szRAM = server;	// MQTT server address
+            MQTTClient.ServerPort = 1883;
+            MQTTClient.ConnectId.szRAM = connectid;
+            MQTTClient.Username.szRAM = username;
+            MQTTClient.Password.szRAM = password;
             MQTTClient.bSecure=FALSE;
             //  MQTTClient.m_Callback = callback;
             MQTTClient.QOS=0;
             MQTTClient.KeepAlive=MQTT_KEEPALIVE_LONG;
             //  MQTTClient.Stream = stream;
             MQTTState++;
+            printf("MQTT client set\n");
+        }
+        else {
+            RequestTimeoutCounter++;
+            if ( RequestTimeoutCounter > REQ_TIMEOUT_CYCLES ) MQTTState = MQTT_DONE;
         }
 		break;
 
 		case MQTT_CONNECT:
+        printf("MQTT CONNECT\n");
         MQTTConnect(MQTTClient.ConnectId.szRAM,MQTTClient.Username.szRAM,MQTTClient.Password.szRAM, NULL,0,0,NULL);
         MQTTState++;
 		break;
 
 		case MQTT_CONNECT_WAIT:
-        if(MQTTIsIdle()) {
-            if(MQTTResponseCode == MQTT_SUCCESS)
-                MQTTState++;
-            else {
-                MQTTState = MQTT_FINISHING;
-            }
+        if(MQTTConnected()) {
+            MQTTState++;
+        }
+        else {
+            RequestTimeoutCounter++;
+            if ( RequestTimeoutCounter > REQ_TIMEOUT_CYCLES ) MQTTState = MQTT_DONE;
         }
 		break;
 
 		case MQTT_PUBLISH:
-        MQTTClient.Topic.szRAM = "iot-2/evt/temperature/fmt/json";
-        GetAsJSONValue(JSONbuffer,"temperature",25.5);
-        MQTTClient.Payload.szRAM = JSONbuffer;
+        MQTTClient.Topic.szRAM = "testTopic";
+        //GetAsJSONValue(JSONbuffer,"temperature",25.5);
+        //MQTTClient.Payload.szRAM = JSONbuffer;
+        MQTTClient.Payload.szRAM = payload;
+        printf("MQTT Publish\n");
         MQTTPublish(MQTTClient.Topic.szRAM,MQTTClient.Payload.szRAM,strlen(MQTTClient.Payload.szRAM),0);		// così... ROM?
         MQTTState++;
 		break;
@@ -312,29 +333,30 @@ void handle_mqtt(void) {
             else {
                 MQTTState=MQTT_FINISHING;
             }
+            printf("MQTT publish wait\n");
+        }
+        else {
+            RequestTimeoutCounter++;
+            if ( RequestTimeoutCounter > REQ_TIMEOUT_CYCLES ) MQTTState = MQTT_DONE;
         }
 		break;
 
 		case MQTT_FINISHING:
-        if(!MQTTIsBusy())	{
-            // Finished receiving mail
-            //LED1_IO = 0;
+        if (!MQTTIsBusy())	{
             MQTTState++;
-            WaitTime = TickGet();
-            //LED2_IO = (MQTTEndUsage() == MQTT_SUCCESS);
+            printf("MQTT finishing\n");
+        }
+        else {
+            RequestTimeoutCounter++;
+            if ( RequestTimeoutCounter > REQ_TIMEOUT_CYCLES ) MQTTState = MQTT_DONE;
         }
 		break;
 
 		case MQTT_DONE:
-			// Wait for the user to release BUTTON2 or BUTTON3 and for at 
-			// least 1 second to pass before allowing another 
-			// email to be sent.  This is merely to prevent 
-			// accidental flooding of email boxes while 
-			// developing code.  Your application may wish to remove this.
-			if(1) {
-				if(TickGet() - WaitTime > TICK_SECOND)
-					MQTTState = MQTT_HOME;
-				}
+            printf("MQTT disconnecting\n");
+            MQTTEndUsage();
+            MQTTState = MQTT_HOME;
+            mqtt_timer = millis();
 		break;
 	}
 }

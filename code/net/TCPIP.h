@@ -403,6 +403,10 @@
 	#include "SMTP.h"
 #endif
 
+#if defined(STACK_USE_MQTT_CLIENT)
+	#include "MQTT.h"
+#endif        
+
 #if defined(STACK_USE_TFTP_CLIENT)
 	#include "TFTPc.h"
 #endif
