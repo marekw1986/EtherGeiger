@@ -262,7 +262,11 @@ void handle_mqtt(void) {
 	} MQTTClientState = MQTT_CLIENT_HOME;
     
 	static DWORD WaitTime;
+<<<<<<< HEAD
 	static char JSONbuffer[128];
+=======
+	static char JSONbuffer[256];
+>>>>>>> c5af810 (MQTT)
     static uint32_t mqtt_timer = 0;
        
 	switch(MQTTClientState)	{
@@ -354,7 +358,8 @@ void handle_mqtt(void) {
 
 
 char* constructJSON (char* buf, uint16_t len) {
-    snprintf(buf, len, "{\n\t\"temperature\": %.2f,\n\t\"pressure\": %.2f,\n\t\"humidity\": %.2f,\n\t\"radiation\": %.4f\n}", bme_temperature, bme_pressure, bme_humidity, cpm2sievert(cpm()));
+    snprintf(buf, len, "{\"id\":\"ethergeiger1\",\"bme\":{\"timestamp\":%lu,\"temperature\":%.2f,\"pressure\":%.2f,\"humidity\":%.2f},\"geiger\":{\"timestamp\":%lu,\"radiation\":%.4f}}",
+            bme_timestamp, bme_temperature, bme_pressure, bme_humidity, rtccGetTimestamp(), cpm2sievert(cpm()));
     return buf;
 }
 
