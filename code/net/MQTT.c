@@ -326,7 +326,6 @@ void MQTTTask(void) {
 				else
 #endif
 				DNSResolve(MQTTClient.Server.szRAM, DNS_TYPE_A);
-                printf("MQTT: Resolving server address\n");
             }
 			else {
 				MQTTState=MQTT_HOME;		// can't do anything
@@ -342,7 +341,6 @@ void MQTTTask(void) {
 			if(!DNSIsResolved(&MQTTServer))	{
 				// Timeout after 6 seconds of unsuccessful DNS resolution
 				if(TickGet() - Timer > 6*TICK_SECOND)	{
-                    printf("MQTT: Resolving error (timeout)\n");
 					MQTTResponseCode = MQTT_RESOLVE_ERROR;
 					MQTTState = MQTT_HOME;
 					DNSEndUsage();
@@ -354,7 +352,6 @@ void MQTTTask(void) {
 			if(!DNSEndUsage()) {
 				// An invalid IP address was returned from the DNS 
 				// server.  Quit and fail permanantly if host is not valid.
-                printf("MQTT: Resolving error (invalid IP)\n");
 				MQTTResponseCode = MQTT_RESOLVE_ERROR;
 				MQTTState = MQTT_HOME;
 				break;
@@ -365,14 +362,12 @@ void MQTTTask(void) {
 
 		case MQTT_OBTAIN_SOCKET:
 			// Connect a TCP socket to the remote MQTT server
-            printf("Obtaining socket for IP %d.%d.%d.%d\n", MQTTServer.v[0], MQTTServer.v[1], MQTTServer.v[2], MQTTServer.v[3]);
 			MySocket = TCPOpen(MQTTServer.Val, TCP_OPEN_IP_ADDRESS, MQTTClient.ServerPort, TCP_PURPOSE_DEFAULT);
 			
 			// Abort operation if no TCP sockets are available
 			// If this ever happens, add some more 
 			// TCP_PURPOSE_DEFAULT sockets in TCPIPConfig.h
 			if(MySocket == INVALID_SOCKET) {
-                printf("MQTT: Invalid socket\n");
 				break;
             }
 
@@ -387,7 +382,6 @@ void MQTTTask(void) {
 				// server was connected, but then disconnected us.
 				// Also time out if we can't establish the connection to the MQTT server
 				if(MQTTFlags.bits.ConnectedOnce || ((LONG)(TickGet()-Timer) > (LONG)(MQTT_SERVER_REPLY_TIMEOUT)))	{
-                    printf("MQTT: Server reply timeout\n");
 					MQTTResponseCode = MQTT_CONNECT_ERROR;
 					MQTTState = MQTT_CLOSE;
 					}
