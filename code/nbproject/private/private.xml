@@ -6,14 +6,15 @@
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/net/MQTT.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/time/time.c</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/geiger/geiger.c</file>
-            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/GenericTypeDefs.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/nvram/nvram.c</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/net/StackTsk.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/main.c</file>
-            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/TCPIPConfig.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/lcd/display.c</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/common.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/net/MQTT.c</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/common.c</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/GenericTypeDefs.h</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/TCPIPConfig.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/net/TCPIP.h</file>
         </group>
     </open-files>

@@ -262,11 +262,7 @@ void handle_mqtt(void) {
 	} MQTTClientState = MQTT_CLIENT_HOME;
     
 	static DWORD WaitTime;
-<<<<<<< HEAD
-	static char JSONbuffer[128];
-=======
 	static char JSONbuffer[256];
->>>>>>> c5af810 (MQTT)
     static uint32_t mqtt_timer = 0;
        
 	switch(MQTTClientState)	{
