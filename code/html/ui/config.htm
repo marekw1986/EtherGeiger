@@ -182,6 +182,11 @@ function test() {
 </div>
 <label>Adres MAC</label><input type="text" name="mac" id="mac" class="macInput" value="~mac~" maxlength="17"><br>
 <label>Serwer NTP</label><input type="text" name="ntp" id="ntp" value="~ntp~" maxlength="60"><br>
+
+<label>Serwer MQTT:</label><input type="text" name="mqtt_server" id="mqtt_server" value="~mqtt_server~" maxlength="60"> (pozostaw puste by wyłaczyć logowanie MQTT)<br>
+<label>Port MQTT:</label><input type="text" name="mqtt_port" id="mqtt_port" value="~mqtt_port~" maxlength="60"><br>
+<label>Temat MQTT:</label><input type="text" name="mqtt_topic" id="mqtt_topic" value="~mqtt_topic~" maxlength="60"><br>
+
 <input type="hidden" name="curtz" id="curtz" value="~timezone~">
 <label>Strefa czasowa:</label><select id="timezone"></select><br><br><br>
 <input type="button" value="Zapisz" onclick="test()">

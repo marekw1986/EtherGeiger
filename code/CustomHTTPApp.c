@@ -79,7 +79,9 @@ static HTTP_IO_RESULT HTTPPostPass (void);
 #endif
 
 enum {PASSCHANGE_UNKNOWN, PASSCHANGE_INVALID_TOKEN, PASSCHANGE_EMPTY_OLD, PASSCHANGE_WRONG_OLD, PASSCHANGE_INVALID_NEW, PASSCHANGE_OK};
-enum {CFGCHANGE_UNKNOWN, CFGCHANGE_INVALID_TOKEN, CFGCHANGE_INVALID_DHCP, CFGCHANGE_INVALID_IP, CFGCHANGE_INVALID_MAC, CFGCHANGE_INVALID_NETMASK, CFGCHANGE_INVALID_GW, CFGCHANGE_INVALID_DNS1, CFGCHANGE_INVALID_DNS2, CFGCHANGE_INVALID_NTP, CFGCHANGE_INVALID_TIMEZONE, CFGCHANGE_OK};
+enum {CFGCHANGE_UNKNOWN, CFGCHANGE_INVALID_TOKEN, CFGCHANGE_INVALID_DHCP, CFGCHANGE_INVALID_IP, CFGCHANGE_INVALID_MAC, CFGCHANGE_INVALID_NETMASK, 
+      CFGCHANGE_INVALID_GW, CFGCHANGE_INVALID_DNS1, CFGCHANGE_INVALID_DNS2, CFGCHANGE_INVALID_NTP, CFGCHANGE_INVALID_TIMEZONE, CFGCHANGE_INVALID_DEVNAME, 
+      CFGCHANGE_INVALID_MQTT,  CFGCHANGE_INVALID_MQTT_PORT, CFGCHANGE_INVALID_TOPIC, CFGCHANGE_OK};
 enum {RESTORE_UNKNOWN, RESTORE_INVALID_TOKEN, RESTORE_OK};
 
 /*****************************************************************************
@@ -309,7 +311,40 @@ static HTTP_IO_RESULT HTTPPostConfig (void) {
                 curHTTP.data[0] = CFGCHANGE_INVALID_TIMEZONE;
                 return HTTP_IO_DONE;
             }
-		}          
+		}
+        else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqtt", 4) == 0) {
+            if (strlen(&curHTTP.data[5]) < sizeof(newConfig.mqtt_server)) {strncpy(newConfig.mqtt_server, &curHTTP.data[5], sizeof(newConfig.mqtt_server)-1);}
+            else {
+                curHTTP.data[0] = CFGCHANGE_INVALID_MQTT;
+                return HTTP_IO_DONE;
+            }
+        }
+        else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqtt_port", 9) == 0) {
+            uint32_t tmpval = strtol(&curHTTP.data[10], NULL, 10);
+            if (tmpval) {
+                newConfig.mqtt_port = tmpval;
+            }
+            else {
+                curHTTP.data[0] = CFGCHANGE_INVALID_MQTT_PORT;
+                return HTTP_IO_DONE;                
+            }
+        }
+        else if (memcmppgm2ram(curHTTP.data, (ROM void*)"topic", 5) == 0) {
+            if (strlen(&curHTTP.data[6]) < sizeof(newConfig.mqtt_topic)) {strncpy(newConfig.mqtt_topic, &curHTTP.data[6], sizeof(newConfig.mqtt_topic)-1);}
+            else {
+                curHTTP.data[0] = CFGCHANGE_INVALID_TOPIC;
+                return HTTP_IO_DONE;                   
+            }
+        }
+        else if (memcmppgm2ram(curHTTP.data, (ROM void*)"devname", 7) == 0) {
+            if (strlen(&curHTTP.data[8]) <= 32) {
+                strncpy(newConfig.devname, &curHTTP.data[8], sizeof(newConfig.devname)-1);
+            }
+            else {
+                curHTTP.data[0] = CFGCHANGE_INVALID_DEVNAME;
+                return HTTP_IO_DONE;                      
+            }
+        }
 	}   
     
     if (!tokenValid) {
@@ -515,6 +550,27 @@ void HTTPPrint_ntp(void) {
     return;
 }
 
+void HTTPPrint_devname(void) {
+    TCPPutString(sktHTTP, config.devname);
+    return;
+}
+
+void HTTPPrint_mqtt_server(void) {
+    TCPPutString(sktHTTP, config.mqtt_server);
+    return;
+}
+
+void HTTPPrint_mqtt_topic(void) {
+    TCPPutString(sktHTTP, config.mqtt_topic);
+    return;
+}
+
+void HTTPPrint_mqtt_port(void) {
+    char tmp[32];
+    TCPPutString(sktHTTP, itoa(tmp, config.mqtt_port, 10));
+    return;
+}
+
 void HTTPPrint_newip(void) {
     config_t newConfig;
     int i;
@@ -622,6 +678,22 @@ void HTTPPrint_configChangeStatus (void) {
         TCPPutROMString(sktHTTP, (ROM void*)"invalid_timezone");
         break;
         
+        case CFGCHANGE_INVALID_MQTT:
+        TCPPutROMString(sktHTTP, (ROM void*)"invalid_mqtt");
+        break;
+        
+        case CFGCHANGE_INVALID_MQTT_PORT:
+        TCPPutROMString(sktHTTP, (ROM void*)"invalid_mqttport");
+        break;
+
+        case CFGCHANGE_INVALID_TOPIC:
+        TCPPutROMString(sktHTTP, (ROM void*)"invalid_topic");
+        break;        
+        
+        case CFGCHANGE_INVALID_DEVNAME:
+        TCPPutROMString(sktHTTP, (ROM void*)"invalid_devname");
+        break;        
+        
         case CFGCHANGE_OK:
         TCPPutROMString(sktHTTP, (ROM void*)"ok");
         break;
@@ -707,7 +779,7 @@ void HTTPPrint_sensors (void) {
     
     TCPPutROMString(sktHTTP, (ROM void*)"{\n");
     if (bme_timestamp) {
-        TCPPutROMString(sktHTTP, (ROM void*)"\"bme\": {");
+        TCPPutROMString(sktHTTP, (ROM void*)"\"bme280\": {");
         TCPPutROMString(sktHTTP, (ROM void*)"\"temparature\": ");      
         sprintf(buff, "%.2f", bme_temperature);
         TCPPutString(sktHTTP, buff);

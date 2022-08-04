@@ -12,6 +12,7 @@ void loadDefaultSettings(void) {
     memset((void*)&config, 0x00, sizeof(config));
     config.timeZone = -120;
     config.usbLogInterval = 60;
+    memcpypgm2ram((void*)&config.devname, (char*)"EtherGeiger_1", 14);
     memcpypgm2ram((void*)&config.password, (char*)"s3cr3t", 7);
     memcpypgm2ram((void*)&config.AppConfig.MyMACAddr, (ROM void*)SerializedMACAddress, sizeof(AppConfig.MyMACAddr));
     memcpypgm2ram((void*)&config.AppConfig.NetBIOSName, (char*)"board", 6);
@@ -24,10 +25,15 @@ void loadDefaultSettings(void) {
     config.AppConfig.MyGateway.Val = MY_DEFAULT_GATE_BYTE1 | MY_DEFAULT_GATE_BYTE2<<8ul | MY_DEFAULT_GATE_BYTE3<<16ul | MY_DEFAULT_GATE_BYTE4<<24ul;
     config.AppConfig.PrimaryDNSServer.Val = MY_DEFAULT_PRIMARY_DNS_BYTE1 | MY_DEFAULT_PRIMARY_DNS_BYTE2 <<8ul  | MY_DEFAULT_PRIMARY_DNS_BYTE3<<16ul  | MY_DEFAULT_PRIMARY_DNS_BYTE4<<24ul;
     config.AppConfig.SecondaryDNSServer.Val = MY_DEFAULT_SECONDARY_DNS_BYTE1 | MY_DEFAULT_SECONDARY_DNS_BYTE2<<8ul  | MY_DEFAULT_SECONDARY_DNS_BYTE3<<16ul  | MY_DEFAULT_SECONDARY_DNS_BYTE4<<24ul;
+    memcpypgm2ram((void*)&config.mqtt_server, (char*)"192.168.1.105", 14);
+    memcpypgm2ram((void*)&config.mqtt_topic, (char*)"testTopic", 10);
+    memcpypgm2ram((void*)&config.mqtt_login, (char*)"use-token-auth", 15);
+    memcpypgm2ram((void*)&config.mqtt_password, (char*)"secretpassword", 15);
+    config.mqtt_port = 1883;
 }
 
 void CheckAndLoadDefaults( void ) {
-	BYTE i, len = sizeof(config);
+	uint32_t i, len = sizeof(config);
 	BYTE * ram_wsk = (BYTE*)&config;
 
 	eprom_read((void*)&config, sizeof(config));

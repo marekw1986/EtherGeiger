@@ -164,6 +164,7 @@ void handle_bme_read (void) {
         bme_pressure = bme_get_pressure(); //value in hPa
         bme_humidity = bme_get_humidity() * 100; //value in percents
         bme_timestamp = rtccGetTimestamp();
+        bme_timer = millis();
     }
 }
 
@@ -354,7 +355,7 @@ void handle_mqtt(void) {
 
 
 char* constructJSON (char* buf, uint16_t len) {
-    snprintf(buf, len, "{\"id\":\"ethergeiger1\",\"bme\":{\"timestamp\":%lu,\"temperature\":%.2f,\"pressure\":%.2f,\"humidity\":%.2f},\"geiger\":{\"timestamp\":%lu,\"radiation\":%.4f}}",
+    snprintf(buf, len, "{\"id\":\"ethergeiger1\",\"class\":\"EtherGeiger\",\"bme280\":{\"timestamp\":%lu,\"temperature\":%.2f,\"pressure\":%.2f,\"humidity\":%.2f},\"geiger\":{\"timestamp\":%lu,\"radiation\":%.4f}}",
             bme_timestamp, bme_temperature, bme_pressure, bme_humidity, rtccGetTimestamp(), cpm2sievert(cpm()));
     return buf;
 }
