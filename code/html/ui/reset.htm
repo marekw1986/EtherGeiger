@@ -13,18 +13,8 @@ function reset() {
 	   http_request = new XMLHttpRequest();
 	}
 	catch (e) {
-	   try {
-		  http_request = new ActiveXObject("Msxml2.XMLHTTP");	
-	   }
-	   catch (e) {
-			try {
-				http_request = new ActiveXObject("Microsoft.XMLHTTP");
-			}
-			catch (e){
-				main.innerHTML = "Wystąpił błąd przegl?darki, uniemożliwiający wykonanie zdalnego resetu urządzenia.";
-				return false;
-			}	
-		}
+        main.innerHTML = "Wystąpił błąd przegl?darki, uniemożliwiający wykonanie zdalnego resetu urządzenia.";
+        return false;
 	}
 	http_request.open("GET", "/ui/reset.cgi", true);
 	http_request.send();

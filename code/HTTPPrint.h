@@ -61,6 +61,7 @@ void HTTPPrint_showarch(void);
 void HTTPPrint_newip(void);
 void HTTPPrint_configChangeStatus(void);
 void HTTPPrint_configToken(void);
+void HTTPPrint_devname(void);
 void HTTPPrint_dhcpyes(void);
 void HTTPPrint_dhcpno(void);
 void HTTPPrint_ipdisp(void);
@@ -112,57 +113,60 @@ void HTTPPrint(DWORD callbackID)
 			HTTPPrint_configToken();
 			break;
         case 0x00000009:
-			HTTPPrint_dhcpyes();
+			HTTPPrint_devname();
 			break;
         case 0x0000000a:
-			HTTPPrint_dhcpno();
+			HTTPPrint_dhcpyes();
 			break;
         case 0x0000000b:
-			HTTPPrint_ipdisp();
+			HTTPPrint_dhcpno();
 			break;
         case 0x0000000c:
-			HTTPPrint_ip();
+			HTTPPrint_ipdisp();
 			break;
         case 0x0000000d:
-			HTTPPrint_netmask();
+			HTTPPrint_ip();
 			break;
         case 0x0000000e:
-			HTTPPrint_gw();
+			HTTPPrint_netmask();
 			break;
         case 0x0000000f:
-			HTTPPrint_dns1();
+			HTTPPrint_gw();
 			break;
         case 0x00000010:
-			HTTPPrint_dns2();
+			HTTPPrint_dns1();
 			break;
         case 0x00000011:
-			HTTPPrint_mac();
+			HTTPPrint_dns2();
 			break;
         case 0x00000012:
-			HTTPPrint_ntp();
+			HTTPPrint_mac();
 			break;
         case 0x00000013:
-			HTTPPrint_mqtt_server();
+			HTTPPrint_ntp();
 			break;
         case 0x00000014:
-			HTTPPrint_mqtt_port();
+			HTTPPrint_mqtt_server();
 			break;
         case 0x00000015:
-			HTTPPrint_mqtt_topic();
+			HTTPPrint_mqtt_port();
 			break;
         case 0x00000016:
-			HTTPPrint_passChangeStatus();
+			HTTPPrint_mqtt_topic();
 			break;
         case 0x00000017:
-			HTTPPrint_reset();
+			HTTPPrint_passChangeStatus();
 			break;
         case 0x00000018:
-			HTTPPrint_restore();
+			HTTPPrint_reset();
 			break;
         case 0x00000019:
-			HTTPPrint_uptime();
+			HTTPPrint_restore();
 			break;
         case 0x0000001a:
+			HTTPPrint_uptime();
+			break;
+        case 0x0000001b:
 			HTTPPrint_time();
 			break;
 		default:

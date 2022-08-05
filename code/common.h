@@ -37,6 +37,7 @@ extern "C" {
 FRESULT FormatSpiFlashDisk (void);
 unsigned char BcdToByte(unsigned char bcd);
 unsigned char ByteToBcd(unsigned char i);
+char* constructJSON (char* buf, uint16_t len);
 
 #ifdef	__cplusplus
 }

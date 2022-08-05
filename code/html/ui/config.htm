@@ -47,6 +47,7 @@ function test() {
 	var result = document.getElementById('result');
 	if (document.getElementById('dhcpYes').checked) {var dhcp="yes";}
 	else {var dhcp="no";}
+    var devname = document.getElementById('devname');
 	var ip = document.getElementById('ip');
 	var netmask = document.getElementById('netmask');
 	var gw = document.getElementById('gw');
@@ -54,7 +55,10 @@ function test() {
 	var dns2 = document.getElementById('dns2');
     var mac = document.getElementById('mac');
 	var ntp = document.getElementById('ntp');
-	var timezone = document.getElementById('timezone');		
+	var timezone = document.getElementById('timezone');
+    var mqtt = document.getElementById('mqtt_server');
+    var mqtt_port = document.getElementById('mqtt_port');
+    var topic = document.getElementById('mqtt_topic');
 	var token = document.getElementById('token');
 	var inputs = document.getElementsByClassName('ipInput');
 	for(i=0; i<inputs.length; i++) {
@@ -66,6 +70,12 @@ function test() {
 			return false;
 		}
 	}
+	if (devname.value === '') {
+		mqtt_port.focus();
+		result.style.display = 'block';
+		result.innerHTML = "Pole \"Port MQTT\" nie może być puste.";
+		return false;
+	}	    
     if (!ValidateMACaddress(mac)) {
         mac.focus();
         result.style.display = 'block';
@@ -83,18 +93,8 @@ function test() {
 	   http_request = new XMLHttpRequest();
 	}
 	catch (e) {
-	   try {
-		  http_request = new ActiveXObject("Msxml2.XMLHTTP");	
-	   }
-	   catch (e) {
-			try {
-				http_request = new ActiveXObject("Microsoft.XMLHTTP");
-			}
-			catch (e){
-				result.innerHTML = "Wystąpił błąd przeglądarki. Wysłanie nowej konfiguracji do urządzenia nie jest możliwe.";
-				return false;
-			}	
-		}
+		result.innerHTML = "Wystąpił błąd przeglądarki. Wysłanie nowej konfiguracji do urządzenia nie jest możliwe.";
+		return false;
 	}
 	http_request.onreadystatechange = function () {
 		if (http_request.readyState === 4 && http_request.status === 200 ) {
@@ -102,6 +102,10 @@ function test() {
                 result.style.display = 'block';
                 result.innerHTML = "Nieprawidłowy token operacji. Spróbuj ponownie załadować stronę.";
             }
+			else if (http_request.responseText === "invalid_devname") {
+				result.style.display = 'block';
+				result.innerHTML = "Błąd parsowania nowej nazwy urządzenia.";
+			}             
 			else if (http_request.responseText === "invalid_dhcp") {
 				result.style.display = 'block';
 				result.innerHTML = "Błąd parsowania nowych ustawień DHCP.";
@@ -145,7 +149,22 @@ function test() {
 				timezone.focus();
 				result.style.display = 'block';
 				result.innerHTML = "Błąd parsowania nowego ustawienia strefy czasowej.";					
-			}										
+			}
+			else if (http_request.responseText === "invalid_mqtt") {
+				mqtt.focus();
+				result.style.display = 'block';
+				result.innerHTML = "Błąd parsowania nowego adresu serwera MQTT.";					
+			}
+			else if (http_request.responseText === "invalid_mqttport") {
+				mqtt_port.focus();
+				result.style.display = 'block';
+				result.innerHTML = "Błąd parsowania nowego portu MQTT.";					
+			}
+			else if (http_request.responseText === "invalid_topic") {
+				dlsStatus.focus();
+				result.style.display = 'block';
+				result.innerHTML = "Błąd parsowania nowego tematu MQTT.";					
+			}	            
 			else if (http_request.responseText === "ok") {
 				window.location.replace("/ui/reset.htm");
 			}
@@ -157,7 +176,7 @@ function test() {
 	};
 	http_request.open("POST", "/ui/config.cgi", true);
 	http_request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-	var request = "token=" + token.value + "&dhcp=" + dhcp + "&ip=" + ip.value + "&netmask=" + netmask.value + "&gw=" + gw.value + "&dns1=" + dns1.value + "&dns2=" + dns2.value + "&ntp=" + ntp.value + "&timezone=" + timezone.value + "&mac=" + mac.value;
+	var request = "token=" + token.value + "&dhcp=" + dhcp + "&ip=" + ip.value + "&netmask=" + netmask.value + "&gw=" + gw.value + "&dns1=" + dns1.value + "&dns2=" + dns2.value + "&ntp=" + ntp.value + "&timezone=" + timezone.value + "&mac=" + mac.value + "&mqttserver=" + mqtt.value + "&mqttport=" + mqtt_port.value + "&topic=" + topic.value + "&devname=" + devname.value;
 	http_request.send(request);
 	return true;	
 }    
@@ -169,6 +188,9 @@ function test() {
 <h1>Konfiguracja</h1>
 
 <input type="hidden" name="token" id="token" value="~configToken~">
+
+<label>Nazwa urządzenia:</label><input type="text" name="devname" id="devname" value="~devname~" maxlength="60"><br><br>
+
 <label>DHCP:</label> 
 <input onClick="hide('dhcpNo', 'ipSettings')" value="yes" type="radio" name="dhcp" id="dhcpYes"~dhcpyes~>wł.
 <input onClick="hide('dhcpNo', 'ipSettings');" value="no" type="radio" name="dhcp" id="dhcpNo"~dhcpno~>wył.<br><br>

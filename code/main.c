@@ -245,7 +245,8 @@ void handle_mqtt(void) {
 #define REQ_TIMEOUT_MS  2000
 #define MQTT_POST_DELAY_MS 30000
     
-    static char server[] = "192.168.1.105";
+    //static char server[] = "192.168.1.105";
+    static char server[64];
     static char connectid[] = "d:atlantis:ethergeiger:1";
     static char username[] = "use-token-auth";
     static char password[] = "secretpassword";
@@ -263,13 +264,16 @@ void handle_mqtt(void) {
 	} MQTTClientState = MQTT_CLIENT_HOME;
     
 	static DWORD WaitTime;
-	static char JSONbuffer[256];
+	static char JSONbuffer[512];
     static uint32_t mqtt_timer = 0;
+    
+    if (strlen(config.mqtt_server) == 0) return;
        
 	switch(MQTTClientState)	{
 		case MQTT_CLIENT_HOME:
         if((uint32_t)(millis()-mqtt_timer) > MQTT_POST_DELAY_MS) {
             // Start sending to MQTT server
+            strncpy(server, config.mqtt_server, sizeof(server)-1);
             mqtt_timer = millis();
             RequestTimeoutTimer = millis();
             MQTTClientState++;
@@ -283,7 +287,7 @@ void handle_mqtt(void) {
             // guarantee that the C compiler does not reuse this 
             // memory, you must allocate the strings as static.
             MQTTClient.Server.szRAM = server;	// MQTT server address
-            MQTTClient.ServerPort = 1883;
+            MQTTClient.ServerPort = config.mqtt_port;
             MQTTClient.ConnectId.szRAM = connectid;
             MQTTClient.Username.szRAM = username;
             MQTTClient.Password.szRAM = password;
@@ -352,14 +356,6 @@ void handle_mqtt(void) {
 		break;
 	}
 }
-
-
-char* constructJSON (char* buf, uint16_t len) {
-    snprintf(buf, len, "{\"id\":\"ethergeiger1\",\"class\":\"EtherGeiger\",\"bme280\":{\"timestamp\":%lu,\"temperature\":%.2f,\"pressure\":%.2f,\"humidity\":%.2f},\"geiger\":{\"timestamp\":%lu,\"radiation\":%.4f}}",
-            bme_timestamp, bme_temperature, bme_pressure, bme_humidity, rtccGetTimestamp(), cpm2sievert(cpm()));
-    return buf;
-}
-
 
 
 static enum {

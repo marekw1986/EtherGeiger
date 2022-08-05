@@ -19,18 +19,8 @@ function reset(hard) {
 	   xmlhttp = new XMLHttpRequest();
 	}
 	catch (e) {
-	   try {
-		  xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");	
-	   }
-	   catch (e) {
-			try {
-				xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-			}
-			catch (e){
-				result.innerHTML = "Wyst?pi? b??d przegl?darki, uniemo?liwiaj?cy wykonanie zdalnego resetu urz?dzenia.";
-				return false;
-			}	
-		}
+        result.innerHTML = "Wyst?pi? b??d przegl?darki, uniemo?liwiaj?cy wykonanie zdalnego resetu urz?dzenia.";
+        return false;
 	}
     var url = "/ui/reset.cgi?token=" + token.value;
     if (hard) {url += "&hardreset=yes";}

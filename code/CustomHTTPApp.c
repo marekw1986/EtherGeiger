@@ -312,15 +312,15 @@ static HTTP_IO_RESULT HTTPPostConfig (void) {
                 return HTTP_IO_DONE;
             }
 		}
-        else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqtt", 4) == 0) {
-            if (strlen(&curHTTP.data[5]) < sizeof(newConfig.mqtt_server)) {strncpy(newConfig.mqtt_server, &curHTTP.data[5], sizeof(newConfig.mqtt_server)-1);}
+        else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqttserver", 10) == 0) {
+            if (strlen(&curHTTP.data[11]) < sizeof(newConfig.mqtt_server)) {strncpy(newConfig.mqtt_server, &curHTTP.data[11], sizeof(newConfig.mqtt_server)-1);}
             else {
                 curHTTP.data[0] = CFGCHANGE_INVALID_MQTT;
                 return HTTP_IO_DONE;
             }
         }
-        else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqtt_port", 9) == 0) {
-            uint32_t tmpval = strtol(&curHTTP.data[10], NULL, 10);
+        else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqttport", 8) == 0) {
+            uint32_t tmpval = strtol(&curHTTP.data[9], NULL, 10);
             if (tmpval) {
                 newConfig.mqtt_port = tmpval;
             }
@@ -772,47 +772,9 @@ void HTTPPrint_cpufreq (void) {
 }
 
 void HTTPPrint_sensors (void) {
-    BYTE buff[64];
-    double siv;
-	WORD countspm;
-    BYTE firstone = 1;
-    
-    TCPPutROMString(sktHTTP, (ROM void*)"{\n");
-    if (bme_timestamp) {
-        TCPPutROMString(sktHTTP, (ROM void*)"\"bme280\": {");
-        TCPPutROMString(sktHTTP, (ROM void*)"\"temparature\": ");      
-        sprintf(buff, "%.2f", bme_temperature);
-        TCPPutString(sktHTTP, buff);
-        TCPPutROMString(sktHTTP, (ROM void*)", \"pressure\": ");     
-        sprintf(buff, "%.2f", bme_pressure);
-        TCPPutString(sktHTTP, buff);
-        TCPPutROMString(sktHTTP, (ROM void*)", \"humdity\": ");     
-        sprintf(buff, "%.2f", bme_humidity);
-        TCPPutString(sktHTTP, buff);        
-        TCPPutROMString(sktHTTP, (ROM void*)", \"timestamp\": ");
-        sprintf(buff, "%lu", bme_timestamp);
-        TCPPutString(sktHTTP, buff);
-        TCPPutROMString(sktHTTP, (ROM void*)"}");
-        firstone = 0;
-    }
-    if ( (uptime() > 60) && rtccIsSet() ) {
-        countspm = cpm();
-		siv = cpm2sievert(countspm);   
-        if (!firstone) {TCPPutROMString(sktHTTP, (ROM void*)",\n");}
-        else {firstone = 0;}
-        TCPPutROMString(sktHTTP, (ROM void*)"\"geiger\": {");
-        TCPPutROMString(sktHTTP, (ROM void*)"\"cpm\": ");
-        sprintf(buff, "%d", countspm);
-        TCPPutString(sktHTTP, buff);
-        TCPPutROMString(sktHTTP, (ROM void*)", \"sievert\": ");
-        sprintf(buff, ".%.4f", siv);
-        TCPPutString(sktHTTP, buff);
-        TCPPutROMString(sktHTTP, (ROM void*)", \"timestamp\": ");
-        sprintf(buff, "%lu", rtccGetTimestamp());
-        TCPPutString(sktHTTP, buff);
-        TCPPutROMString(sktHTTP, (ROM void*)"}");
-    }
-    TCPPutROMString(sktHTTP, (ROM void*)"\n}");
+    BYTE buff[512];
+    constructJSON((char*)buff, sizeof(buff)-1);
+    TCPPutString(sktHTTP, buff);
 }
 
 void HTTPPrint_showarch (void) {

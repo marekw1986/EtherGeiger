@@ -1,7 +1,9 @@
 #include <stdio.h>
 
 #include "common.h"
+#include "config/config.h"
 #include "net/TCPIP.h"
+#include "time/time.h"
 
 double bme_temperature;
 double bme_pressure;
@@ -50,4 +52,20 @@ unsigned char StringToMACAddress(BYTE* str, MAC_ADDR* MACAddress) {
         return 1;
     }
     return 0;
+}
+
+char* constructJSON (char* buf, uint16_t len) {
+    char tmp[128];
+    snprintf(buf, len, "{\n\t\"id\":\t\"%s\",\n\t\"class\":\t\"EtherGeiger\"", config.devname);
+    if (uptime() > 60 && rtccIsSet()) {
+        snprintf(tmp, sizeof(tmp)-1, ",\n\t\"geiger\":\t{\n\t\t\"timestamp\":\t%lu,\n\t\t\"radiation\":\t%.4f\n\t}", rtccGetTimestamp(), cpm2sievert(cpm()));
+        strncat(buf, tmp, len-strlen(buf));
+    }
+    if (bme_timestamp) {
+        snprintf(tmp, sizeof(tmp)-1, ",\n\t\"bme280\":\t{\n\t\t\"timestamp\":\t%lu,\n\t\t\"temperature\":\t%.2f,\n\t\t\"humidity\":\t%.2f,\n\t\t\"pressure\":\t%.2f\n\t}", bme_timestamp, bme_temperature, bme_humidity, bme_pressure);
+        strncat(buf, tmp, len-strlen(buf));
+    }
+    strncat(buf, "\n}", len-strlen(buf));
+    //snprintf(buf, len, "{\n\t\"id\":\t\"%s\",\n\t\"class\":\t\"EtherGeiger\",\n\t\"geiger\":\t{\n\t\t\"timestamp\":\t%lu,\n\t\t\"radiation\":\t%.4f\n\t}\n\t\"bme280\":\t{\n\t\t\"timestamp\":\t%lu,\n\t\t\"temperature\":\t%.2f,\n\t\t\"humidity\":\t%.2f\n\t\t\"pressure\":\t%.2f,\n\t},\n}", config.devname, rtccGetTimestamp(), cpm2sievert(cpm()), bme_timestamp, bme_temperature, bme_humidity, bme_pressure);
+    return buf;
 }
