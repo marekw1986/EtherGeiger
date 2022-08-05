@@ -347,8 +347,8 @@
 	//#define HTTP_SAVE_CONTEXT_IN_PIC_RAM
 
 	// Indicate what file to serve when no specific one is requested
-	#define HTTP_DEFAULT_FILE		"ui/index.htm"
-	#define HTTPS_DEFAULT_FILE		"ui/index.htm"
+	#define HTTP_DEFAULT_FILE		"data.json"
+	#define HTTPS_DEFAULT_FILE		"data.json"
 	#define HTTP_DEFAULT_LEN		(10u)		// For buffer overrun protection.
 												// Set to longest length of above two strings.
 
