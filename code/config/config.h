@@ -18,10 +18,10 @@ typedef struct __attribute__((__packed__)) {
     BYTE usbLogInterval;
     BYTE password[34];
     char mqtt_server[64];
-    uint16_t mqtt_port;
     char mqtt_topic[64];
-    char mqtt_login[64];
-    char mqtt_password[64];
+    char mqtt_username[64];
+    char mqtt_password[64];    
+    uint16_t mqtt_port;
     APP_CONFIG AppConfig;
 } config_t;
 

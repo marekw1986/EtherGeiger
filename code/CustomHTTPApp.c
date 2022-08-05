@@ -81,7 +81,7 @@ static HTTP_IO_RESULT HTTPPostPass (void);
 enum {PASSCHANGE_UNKNOWN, PASSCHANGE_INVALID_TOKEN, PASSCHANGE_EMPTY_OLD, PASSCHANGE_WRONG_OLD, PASSCHANGE_INVALID_NEW, PASSCHANGE_OK};
 enum {CFGCHANGE_UNKNOWN, CFGCHANGE_INVALID_TOKEN, CFGCHANGE_INVALID_DHCP, CFGCHANGE_INVALID_IP, CFGCHANGE_INVALID_MAC, CFGCHANGE_INVALID_NETMASK, 
       CFGCHANGE_INVALID_GW, CFGCHANGE_INVALID_DNS1, CFGCHANGE_INVALID_DNS2, CFGCHANGE_INVALID_NTP, CFGCHANGE_INVALID_TIMEZONE, CFGCHANGE_INVALID_DEVNAME, 
-      CFGCHANGE_INVALID_MQTT,  CFGCHANGE_INVALID_MQTT_PORT, CFGCHANGE_INVALID_TOPIC, CFGCHANGE_OK};
+      CFGCHANGE_INVALID_MQTT,  CFGCHANGE_INVALID_MQTT_PORT, CFGCHANGE_INVALID_MQTT_USERNAME, CFGCHANGE_INVALID_MQTT_PASSWORD, CFGCHANGE_INVALID_TOPIC, CFGCHANGE_OK};
 enum {RESTORE_UNKNOWN, RESTORE_INVALID_TOKEN, RESTORE_OK};
 
 /*****************************************************************************
@@ -319,6 +319,20 @@ static HTTP_IO_RESULT HTTPPostConfig (void) {
                 return HTTP_IO_DONE;
             }
         }
+        else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqttusername", 12) == 0) {
+            if (strlen(&curHTTP.data[13]) < sizeof(newConfig.mqtt_username)) {strncpy(newConfig.mqtt_username, &curHTTP.data[13], sizeof(newConfig.mqtt_username)-1);}
+            else {
+                curHTTP.data[0] = CFGCHANGE_INVALID_MQTT_USERNAME;
+                return HTTP_IO_DONE;
+            }
+        }
+        else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqttpassword", 12) == 0) {
+            if (strlen(&curHTTP.data[13]) < sizeof(newConfig.mqtt_password)) {strncpy(newConfig.mqtt_password, &curHTTP.data[13], sizeof(newConfig.mqtt_password)-1);}
+            else {
+                curHTTP.data[0] = CFGCHANGE_INVALID_MQTT_PASSWORD;
+                return HTTP_IO_DONE;
+            }
+        }         
         else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqttport", 8) == 0) {
             uint32_t tmpval = strtol(&curHTTP.data[9], NULL, 10);
             if (tmpval) {
@@ -560,6 +574,11 @@ void HTTPPrint_mqtt_server(void) {
     return;
 }
 
+void HTTPPrint_mqtt_username(void) {
+    TCPPutString(sktHTTP, config.mqtt_username);
+    return;
+}
+
 void HTTPPrint_mqtt_topic(void) {
     TCPPutString(sktHTTP, config.mqtt_topic);
     return;
@@ -685,6 +704,14 @@ void HTTPPrint_configChangeStatus (void) {
         case CFGCHANGE_INVALID_MQTT_PORT:
         TCPPutROMString(sktHTTP, (ROM void*)"invalid_mqttport");
         break;
+        
+        case CFGCHANGE_INVALID_MQTT_USERNAME:
+        TCPPutROMString(sktHTTP, (ROM void*)"invalid_mqttusername");
+        break;
+
+        case CFGCHANGE_INVALID_MQTT_PASSWORD:
+        TCPPutROMString(sktHTTP, (ROM void*)"invalid_mqttpassword");
+        break;        
 
         case CFGCHANGE_INVALID_TOPIC:
         TCPPutROMString(sktHTTP, (ROM void*)"invalid_topic");

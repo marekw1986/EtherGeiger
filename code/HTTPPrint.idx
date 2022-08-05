@@ -19,6 +19,7 @@
 +mac
 +ntp
 +mqtt_server
++mqtt_username
 +mqtt_port
 +mqtt_topic
 +passChangeStatus

@@ -73,6 +73,7 @@ void HTTPPrint_dns2(void);
 void HTTPPrint_mac(void);
 void HTTPPrint_ntp(void);
 void HTTPPrint_mqtt_server(void);
+void HTTPPrint_mqtt_username(void);
 void HTTPPrint_mqtt_port(void);
 void HTTPPrint_mqtt_topic(void);
 void HTTPPrint_passChangeStatus(void);
@@ -149,24 +150,27 @@ void HTTPPrint(DWORD callbackID)
 			HTTPPrint_mqtt_server();
 			break;
         case 0x00000015:
-			HTTPPrint_mqtt_port();
+			HTTPPrint_mqtt_username();
 			break;
         case 0x00000016:
-			HTTPPrint_mqtt_topic();
+			HTTPPrint_mqtt_port();
 			break;
         case 0x00000017:
-			HTTPPrint_passChangeStatus();
+			HTTPPrint_mqtt_topic();
 			break;
         case 0x00000018:
-			HTTPPrint_reset();
+			HTTPPrint_passChangeStatus();
 			break;
         case 0x00000019:
-			HTTPPrint_restore();
+			HTTPPrint_reset();
 			break;
         case 0x0000001a:
-			HTTPPrint_uptime();
+			HTTPPrint_restore();
 			break;
         case 0x0000001b:
+			HTTPPrint_uptime();
+			break;
+        case 0x0000001c:
 			HTTPPrint_time();
 			break;
 		default:

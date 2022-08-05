@@ -266,12 +266,12 @@ void handle_mqtt(void) {
 	static DWORD WaitTime;
 	static char JSONbuffer[512];
     static uint32_t mqtt_timer = 0;
-    
-    if (strlen(config.mqtt_server) == 0) return;
        
 	switch(MQTTClientState)	{
 		case MQTT_CLIENT_HOME:
         if((uint32_t)(millis()-mqtt_timer) > MQTT_POST_DELAY_MS) {
+            //If mqtt_server not set, client diabled
+            if (strlen(config.mqtt_server) == 0) return;
             // Start sending to MQTT server
             strncpy(server, config.mqtt_server, sizeof(server)-1);
             mqtt_timer = millis();
