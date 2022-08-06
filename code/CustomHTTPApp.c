@@ -798,6 +798,17 @@ void HTTPPrint_cpufreq (void) {
     TCPPutString(sktHTTP, buff);
 }
 
+void HTTPPrint_mqttupdate (void) {
+    BYTE buff[64];
+    if (mqtt_last_publish) {
+        snprintf(buff, sizeof(buff)-1, "%d", uptime()-mqtt_last_publish);
+    }
+    else {
+        strncpy(buff, "nigdy", sizeof(buff)-1);
+    }
+    TCPPutString(sktHTTP, buff);
+}
+
 void HTTPPrint_sensors (void) {
     BYTE buff[512];
     constructJSON((char*)buff, sizeof(buff)-1);

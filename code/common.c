@@ -14,6 +14,8 @@ int16_t dht_temperature;
 uint16_t dht_humidity;
 uint32_t dht_timestamp = 0;
 
+uint32_t mqtt_last_publish = 0;
+
 
 FRESULT FormatSpiFlashDisk (void) {
     FRESULT res;

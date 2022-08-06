@@ -30,6 +30,8 @@ int16_t dht_temperature;
 uint16_t dht_humidity;
 uint32_t dht_timestamp;
 
+uint32_t mqtt_last_publish;
+
 #ifdef	__cplusplus
 extern "C" {
 #endif

@@ -246,10 +246,13 @@ void handle_mqtt(void) {
 #define MQTT_POST_DELAY_MS 30000
     
     //static char server[] = "192.168.1.105";
-    static char server[64];
+    //static char username[] = "use-token-auth";
+    //static char password[] = "secretpassword";    
     static char connectid[] = "d:atlantis:ethergeiger:1";
-    static char username[] = "use-token-auth";
-    static char password[] = "secretpassword";
+    static char server[64];
+    static char username[64];
+    static char password[64];
+    static uint16_t port;
     static uint32_t RequestTimeoutTimer = 0;
     
 	static enum	{
@@ -274,6 +277,9 @@ void handle_mqtt(void) {
             if (strlen(config.mqtt_server) == 0) return;
             // Start sending to MQTT server
             strncpy(server, config.mqtt_server, sizeof(server)-1);
+            strncpy(username, config.mqtt_username, sizeof(username)-1);
+            strncpy(password, config.mqtt_password, sizeof(password)-1);
+            port = config.mqtt_port;
             mqtt_timer = millis();
             RequestTimeoutTimer = millis();
             MQTTClientState++;
@@ -287,10 +293,16 @@ void handle_mqtt(void) {
             // guarantee that the C compiler does not reuse this 
             // memory, you must allocate the strings as static.
             MQTTClient.Server.szRAM = server;	// MQTT server address
-            MQTTClient.ServerPort = config.mqtt_port;
+            MQTTClient.ServerPort = port;
             MQTTClient.ConnectId.szRAM = connectid;
-            MQTTClient.Username.szRAM = username;
-            MQTTClient.Password.szRAM = password;
+            if (strlen(username) == 0) {
+                MQTTClient.Username.szRAM = NULL;
+                MQTTClient.Password.szRAM = NULL;
+            }
+            else {
+                MQTTClient.Username.szRAM = username;
+                MQTTClient.Password.szRAM = password;                
+            }
             MQTTClient.bSecure=FALSE;
             //  MQTTClient.m_Callback = callback;
             MQTTClient.QOS=0;
@@ -329,8 +341,10 @@ void handle_mqtt(void) {
 
 		case MQTT_CLIENT_PUBLISH_WAIT:
         if(MQTTIsIdle()) {
-            if(MQTTResponseCode == MQTT_SUCCESS)
+            if(MQTTResponseCode == MQTT_SUCCESS) {
                 MQTTClientState=MQTT_CLIENT_FINISHING;
+                mqtt_last_publish = uptime();
+            }
             else {
                 MQTTClientState=MQTT_CLIENT_FINISHING;
             }

@@ -81,6 +81,7 @@ void HTTPPrint_reset(void);
 void HTTPPrint_restore(void);
 void HTTPPrint_uptime(void);
 void HTTPPrint_time(void);
+void HTTPPrint_mqttupdate(void);
 
 void HTTPPrint(DWORD callbackID)
 {
@@ -172,6 +173,9 @@ void HTTPPrint(DWORD callbackID)
 			break;
         case 0x0000001c:
 			HTTPPrint_time();
+			break;
+        case 0x0000001d:
+			HTTPPrint_mqttupdate();
 			break;
 		default:
 			// Output notification for undefined values
