@@ -274,7 +274,7 @@ void handle_mqtt(void) {
 		case MQTT_CLIENT_HOME:
         if((uint32_t)(millis()-mqtt_timer) > MQTT_POST_DELAY_MS) {
             //If mqtt_server not set, client diabled
-            if (strlen(config.mqtt_server) == 0) return;
+            if ( (strlen(config.mqtt_server) == 0) || (uptime() < 60) ) return;
             // Start sending to MQTT server
             strncpy(server, config.mqtt_server, sizeof(server)-1);
             strncpy(username, config.mqtt_username, sizeof(username)-1);
