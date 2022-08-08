@@ -297,7 +297,7 @@ static HTTP_IO_RESULT HTTPPostConfig (void) {
             }
 		}
 		else if (memcmppgm2ram(curHTTP.data, (ROM void*)"ntp", 3) == 0) {
-            if (strlen(&curHTTP.data[4])) {
+            if (strlen(&curHTTP.data[4]) && !contain_space(&curHTTP.data[4])) {
                 strncpy(newConfig.AppConfig.NtpServer, &curHTTP.data[4], sizeof(newConfig.AppConfig.NtpServer));
             }
             else {
@@ -313,21 +313,21 @@ static HTTP_IO_RESULT HTTPPostConfig (void) {
             }
 		}
         else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqttserver", 10) == 0) {
-            if (strlen(&curHTTP.data[11]) < sizeof(newConfig.mqtt_server)) {strncpy(newConfig.mqtt_server, &curHTTP.data[11], sizeof(newConfig.mqtt_server)-1);}
+            if ( (strlen(&curHTTP.data[11]) < sizeof(newConfig.mqtt_server)) && !contain_space(&curHTTP.data[11]) ) {strncpy(newConfig.mqtt_server, &curHTTP.data[11], sizeof(newConfig.mqtt_server)-1);}
             else {
                 curHTTP.data[0] = CFGCHANGE_INVALID_MQTT;
                 return HTTP_IO_DONE;
             }
         }
         else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqttusername", 12) == 0) {
-            if (strlen(&curHTTP.data[13]) < sizeof(newConfig.mqtt_username)) {strncpy(newConfig.mqtt_username, &curHTTP.data[13], sizeof(newConfig.mqtt_username)-1);}
+            if ( (strlen(&curHTTP.data[13]) < sizeof(newConfig.mqtt_username)) && !contain_space(&curHTTP.data[13]) ) {strncpy(newConfig.mqtt_username, &curHTTP.data[13], sizeof(newConfig.mqtt_username)-1);}
             else {
                 curHTTP.data[0] = CFGCHANGE_INVALID_MQTT_USERNAME;
                 return HTTP_IO_DONE;
             }
         }
         else if (memcmppgm2ram(curHTTP.data, (ROM void*)"mqttpassword", 12) == 0) {
-            if (strlen(&curHTTP.data[13]) < sizeof(newConfig.mqtt_password)) {strncpy(newConfig.mqtt_password, &curHTTP.data[13], sizeof(newConfig.mqtt_password)-1);}
+            if ( (strlen(&curHTTP.data[13]) < sizeof(newConfig.mqtt_password)) && !contain_space(&curHTTP.data[13]) ) {strncpy(newConfig.mqtt_password, &curHTTP.data[13], sizeof(newConfig.mqtt_password)-1);}
             else {
                 curHTTP.data[0] = CFGCHANGE_INVALID_MQTT_PASSWORD;
                 return HTTP_IO_DONE;
@@ -344,14 +344,14 @@ static HTTP_IO_RESULT HTTPPostConfig (void) {
             }
         }
         else if (memcmppgm2ram(curHTTP.data, (ROM void*)"topic", 5) == 0) {
-            if (strlen(&curHTTP.data[6]) < sizeof(newConfig.mqtt_topic)) {strncpy(newConfig.mqtt_topic, &curHTTP.data[6], sizeof(newConfig.mqtt_topic)-1);}
+            if ( (strlen(&curHTTP.data[6]) < sizeof(newConfig.mqtt_topic)) && !contain_space(&curHTTP.data[6]) ) {strncpy(newConfig.mqtt_topic, &curHTTP.data[6], sizeof(newConfig.mqtt_topic)-1);}
             else {
                 curHTTP.data[0] = CFGCHANGE_INVALID_TOPIC;
                 return HTTP_IO_DONE;                   
             }
         }
         else if (memcmppgm2ram(curHTTP.data, (ROM void*)"devname", 7) == 0) {
-            if (strlen(&curHTTP.data[8]) <= 32) {
+            if ( (strlen(&curHTTP.data[8]) < sizeof(newConfig.devname)) && !contain_space(&curHTTP.data[8])) {
                 strncpy(newConfig.devname, &curHTTP.data[8], sizeof(newConfig.devname)-1);
             }
             else {
@@ -801,7 +801,7 @@ void HTTPPrint_cpufreq (void) {
 void HTTPPrint_mqttupdate (void) {
     BYTE buff[64];
     if (mqtt_last_publish) {
-        snprintf(buff, sizeof(buff)-1, "%d", uptime()-mqtt_last_publish);
+        snprintf(buff, sizeof(buff)-1, "%d sek. temu", uptime()-mqtt_last_publish);
     }
     else {
         strncpy(buff, "nigdy", sizeof(buff)-1);

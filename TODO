@@ -1,0 +1,3 @@
+- MQTT: using without password or with invalid password causes resets.
+- MQTT: fix information about time of last message. Now updated even when there is no valid connection.
+- MQTT: delay first message by 60 seconds to gather complete set of radiation samples.

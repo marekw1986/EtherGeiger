@@ -502,6 +502,10 @@ void StackApplications(void)
 	#if defined(STACK_USE_UART2TCP_BRIDGE)
 	UART2TCPBridgeTask();
 	#endif
+
+    #if defined(STACK_USE_MQTT_CLIENT)
+    MQTTTask();
+    #endif
 }
 
 #if defined(WF_CS_TRIS) && defined(STACK_USE_DHCP_CLIENT)

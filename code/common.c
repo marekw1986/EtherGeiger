@@ -71,3 +71,11 @@ char* constructJSON (char* buf, uint16_t len) {
     //snprintf(buf, len, "{\n\t\"id\":\t\"%s\",\n\t\"class\":\t\"EtherGeiger\",\n\t\"geiger\":\t{\n\t\t\"timestamp\":\t%lu,\n\t\t\"radiation\":\t%.4f\n\t}\n\t\"bme280\":\t{\n\t\t\"timestamp\":\t%lu,\n\t\t\"temperature\":\t%.2f,\n\t\t\"humidity\":\t%.2f\n\t\t\"pressure\":\t%.2f,\n\t},\n}", config.devname, rtccGetTimestamp(), cpm2sievert(cpm()), bme_timestamp, bme_temperature, bme_humidity, bme_pressure);
     return buf;
 }
+
+uint8_t contain_space(const char* str) {
+	while(*str) {
+		if (isspace(*str)) return 1;
+		str++;
+	}
+	return 0;
+}

@@ -40,6 +40,7 @@ FRESULT FormatSpiFlashDisk (void);
 unsigned char BcdToByte(unsigned char bcd);
 unsigned char ByteToBcd(unsigned char i);
 char* constructJSON (char* buf, uint16_t len);
+uint8_t contain_space(const char* str);
 
 #ifdef	__cplusplus
 }

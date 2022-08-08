@@ -287,12 +287,12 @@
 			//{TCP_PURPOSE_TCP_PERFORMANCE_TX, TCP_ETH_RAM, 200, 1},
 			//{TCP_PURPOSE_TCP_PERFORMANCE_RX, TCP_ETH_RAM, 40, 1500},
 			//{TCP_PURPOSE_UART_2_TCP_BRIDGE, TCP_ETH_RAM, 256, 256},
-            {TCP_PURPOSE_HTTP_SERVER, TCP_ETH_RAM, 512, 512},
-			{TCP_PURPOSE_HTTP_SERVER, TCP_PIC_RAM, 512, 512},
+            //{TCP_PURPOSE_HTTP_SERVER, TCP_ETH_RAM, 512, 512},
+			//{TCP_PURPOSE_HTTP_SERVER, TCP_PIC_RAM, 512, 512},
             {TCP_PURPOSE_HTTP_SERVER, TCP_PIC_RAM, 512, 512},
             {TCP_PURPOSE_HTTP_SERVER, TCP_PIC_RAM, 512, 512},
             {TCP_PURPOSE_HTTP_SERVER, TCP_PIC_RAM, 512, 512},
-			{TCP_PURPOSE_DEFAULT, TCP_PIC_RAM, 1024, 128},
+			{TCP_PURPOSE_DEFAULT, TCP_PIC_RAM, 2048, 256},
 			//{TCP_PURPOSE_BERKELEY_SERVER, TCP_ETH_RAM, 25, 20},
 			//{TCP_PURPOSE_BERKELEY_SERVER, TCP_ETH_RAM, 25, 20},
 			//{TCP_PURPOSE_BERKELEY_SERVER, TCP_ETH_RAM, 25, 20},
@@ -305,7 +305,7 @@
  *   Define the maximum number of available UDP Sockets, and whether
  *   or not to include a checksum on packets being transmitted.
  */
-#define MAX_UDP_SOCKETS     (5u)
+#define MAX_UDP_SOCKETS     (3u)
 #define UDP_USE_TX_CHECKSUM		// This slows UDP TX performance by nearly 50%, except when using the ENCX24J600 or PIC32MX6XX/7XX, which have a super fast DMA and incurs virtually no speed pentalty.
 
 
@@ -347,8 +347,8 @@
 	//#define HTTP_SAVE_CONTEXT_IN_PIC_RAM
 
 	// Indicate what file to serve when no specific one is requested
-	#define HTTP_DEFAULT_FILE		"data.json"
-	#define HTTPS_DEFAULT_FILE		"data.json"
+	#define HTTP_DEFAULT_FILE		"ui/index.htm"
+	#define HTTPS_DEFAULT_FILE		"ui/index.htm"
 	#define HTTP_DEFAULT_LEN		(10u)		// For buffer overrun protection.
 												// Set to longest length of above two strings.
 

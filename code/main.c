@@ -128,7 +128,6 @@ int main(int argc, char** argv) {
         StackApplications();
         UART_RX_STR_EVENT(buffer);
         //GenericTCPServer();
-        MQTTTask();
         
         USBTasks();
         if ((uint32_t)(millis()-disk_timer) >= 10) {
@@ -250,6 +249,7 @@ void handle_mqtt(void) {
     //static char password[] = "secretpassword";    
     static char connectid[] = "d:atlantis:ethergeiger:1";
     static char server[64];
+    static char topic[64];
     static char username[64];
     static char password[64];
     static uint16_t port;
@@ -272,11 +272,12 @@ void handle_mqtt(void) {
        
 	switch(MQTTClientState)	{
 		case MQTT_CLIENT_HOME:
-        if((uint32_t)(millis()-mqtt_timer) > MQTT_POST_DELAY_MS) {
+        if( (uint32_t)(millis()-mqtt_timer) > MQTT_POST_DELAY_MS ) {
             //If mqtt_server not set, client diabled
-            if ( (strlen(config.mqtt_server) == 0) || (uptime() < 60) ) return;
+            if ( strlen(config.mqtt_server) == 0)  break;
             // Start sending to MQTT server
             strncpy(server, config.mqtt_server, sizeof(server)-1);
+            strncpy(topic, config.mqtt_topic, sizeof(topic)-1);
             strncpy(username, config.mqtt_username, sizeof(username)-1);
             strncpy(password, config.mqtt_password, sizeof(password)-1);
             port = config.mqtt_port;
@@ -330,10 +331,8 @@ void handle_mqtt(void) {
 		break;
 
 		case MQTT_CLIENT_PUBLISH:
-        MQTTClient.Topic.szRAM = "testTopic";
-        //GetAsJSONValue(JSONbuffer,"temperature",25.5);
+        MQTTClient.Topic.szRAM = topic;
         constructJSON(JSONbuffer, sizeof(JSONbuffer)-2);
-        //MQTTClient.Payload.szRAM = JSONbuffer;
         MQTTClient.Payload.szRAM = JSONbuffer;
         MQTTPublish(MQTTClient.Topic.szRAM,MQTTClient.Payload.szRAM,strlen(MQTTClient.Payload.szRAM),0);		// così... ROM?
         MQTTClientState++;
