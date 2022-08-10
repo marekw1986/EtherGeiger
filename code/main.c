@@ -306,7 +306,7 @@ void handle_mqtt(void) {
             }
             MQTTClient.bSecure=FALSE;
             //  MQTTClient.m_Callback = callback;
-            MQTTClient.QOS=0;
+            MQTTClient.QOS=1;
             MQTTClient.KeepAlive=MQTT_KEEPALIVE_LONG;
             //  MQTTClient.Stream = stream;
             MQTTClientState++;
@@ -342,23 +342,30 @@ void handle_mqtt(void) {
         if(MQTTIsIdle()) {
             if(MQTTResponseCode == MQTT_SUCCESS) {
                 MQTTClientState=MQTT_CLIENT_FINISHING;
+                printf("MQTT PUBLISH ACK\r\n");
                 mqtt_last_publish = uptime();
             }
             else {
                 MQTTClientState=MQTT_CLIENT_FINISHING;
+                printf("MQTT PUBLISH ACK\r\n");
             }
         }
         else {
-            if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) MQTTClientState = MQTT_CLIENT_DONE;
+            if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) {
+                MQTTClientState = MQTT_CLIENT_DONE;
+                printf("MQTT PUBLISH timeout\r\n");
+            }
         }
 		break;
 
 		case MQTT_CLIENT_FINISHING:
         if (!MQTTIsBusy())	{
-            MQTTClientState++;
+            MQTTClientState = MQTT_CLIENT_DONE;
         }
         else {
-            if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) MQTTClientState = MQTT_CLIENT_DONE;
+            if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) {
+                MQTTClientState = MQTT_CLIENT_DONE;
+            }
         }
 		break;
 

@@ -92,9 +92,6 @@ WORD MQTTResponseCode;
 
 BYTE MQTTBuffer[MQTT_MAX_PACKET_SIZE];
 
-static BYTE rxBF[200];
-static WORD bytesRecieved = 0;
-
 static WORD lastInActivity=0,lastOutActivity=0;
 
 static WORD LastPingTick = 0;
@@ -244,34 +241,40 @@ BOOL MQTTBeginUsage(void) {
 	1-199 and 300-399 - The last MQTT server response code BOH!
   ***************************************************************************/
 WORD MQTTEndUsage(void) {
-
+    printf("MQTTEndUsage\r\n");
 	if(!MQTTFlags.bits.MQTTInUse)
 		return 0xFFFF;
-
+    
 	// Release the DNS module, if in use
-	if(MQTTState == MQTT_NAME_RESOLVE)
+	if(MQTTState == MQTT_NAME_RESOLVE) {
 		DNSEndUsage();
+        printf("MQTTEndUsage: ending DNS\r\n");
+    }
 	
-	if(MQTTClient.bConnected)
+	if(MQTTClient.bConnected) {
 		MQTTDisconnect();
+        printf("MQTTEndUsage: disconnecting MQTT\r\n");
+    }
 
 	// Release the TCP socket, if in use
-	if(MySocket != INVALID_SOCKET) {
-		TCPDisconnect(MySocket);
-		MySocket = INVALID_SOCKET;
-		}
+	//if(MySocket != INVALID_SOCKET) {
+	//	TCPDisconnect(MySocket);
+	//	MySocket = INVALID_SOCKET;
+    //    printf("MQTTEndUsage: releasing socket\r\n");
+    //}
 	
 	// Release the MQTT module
-	MQTTFlags.bits.MQTTInUse = FALSE;
-	MQTTState = MQTT_HOME;
+	//MQTTFlags.bits.MQTTInUse = FALSE;
+	//MQTTState = MQTT_HOME;
 
 	if(MQTTFlags.bits.ReceivedSuccessfully)	{
+        printf("MQTTEndUsage: success\r\n");
 		return MQTT_SUCCESS;
-		}
+    }
 	else {
 //		return MQTTResponseCode;
-		}
-	}
+    }
+}
 
 /*****************************************************************************
   Function:
@@ -508,8 +511,8 @@ void MQTTTask(void) {
 			WORD len= MQTTReadPacket();
             printf("len=%d\r\n\r\n", len);
 
-			if(len >= 4 && ISCONNACK) { //len    bytesRecieved
- 				switch(MQTTBuffer[3]) {   //MQTTBuffer
+			if(len >= 4 && ISCONNACK) {
+ 				switch(MQTTBuffer[3]) {
 					case 0:
 						lastInActivity = TickGet();
 						MQTTFlags.bits.PingOutstanding = FALSE;
@@ -609,15 +612,6 @@ void MQTTTask(void) {
 
 				//BYTE llen;
 			WORD len= MQTTReadPacket(); //&llen
-
-                        /*
-                        int rec = TCPIsGetReady(MySocket);
-                        if ( rec <= 0 )
-                        {
-                                        break;
-                        }
-                        int length = TCPGetArray(MySocket, rxBF, rec);
-                            */
 
 //			char myBuf[128];
 //			wsprintf(myBuf,"publish: len=%u, %02X,%02X,%02X,%02X",len,buffer[0],buffer[1],buffer[2],buffer[3]);
@@ -735,12 +729,14 @@ void MQTTTask(void) {
 
 		case MQTT_DISCONNECT:	
 				//disconnect() 
+            printf("Disconnecting MQTT\r\n");
 			MQTTBuffer[0] = MQTTDISCONNECT;
 			MQTTBuffer[1] = 0;
 			if(TCPIsPutReady(MySocket) >= 2) {
 				MQTTPutArray(MQTTBuffer,2);
 				lastOutActivity = TickGet();
 				MQTTState=MQTT_CLOSE;
+                printf("Disconnect message sent\r\n");
 				MQTTStop();
 				}
 			break;
@@ -759,6 +755,7 @@ void MQTTTask(void) {
 			if(MySocket != INVALID_SOCKET)
 				TCPClose(MySocket);
 			MQTTState = MQTT_HOME;
+            MQTTFlags.bits.MQTTInUse = FALSE;
 			break;
 		case MQTT_IDLE:	
 			if(MQTTConnected()) {
@@ -1439,8 +1436,10 @@ BOOL MQTTSubscribe(char *topic, BYTE qos) {
 BOOL MQTTDisconnect(void) {
 
 	if(MQTTState==MQTT_IDLE) {
+        printf("MQTTDisconnect: MQTT is IDLE\r\n");
 		if(MQTTClient.bConnected) {
 			MQTTState=MQTT_DISCONNECT;
+            printf("MQTTEndUsage: state changed to MQTT_DISCONNECT\r\n");
 			return 1;
 			}
 		}
