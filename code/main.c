@@ -272,7 +272,7 @@ void handle_mqtt(void) {
        
 	switch(MQTTClientState)	{
 		case MQTT_CLIENT_HOME:
-        if( (uint32_t)(millis()-mqtt_timer) > MQTT_POST_DELAY_MS ) {
+        if( ((uint32_t)(millis()-mqtt_timer) > MQTT_POST_DELAY_MS) && (uptime() > 60) ) {
             //If mqtt_server not set, client diabled
             if ( strlen(config.mqtt_server) == 0)  break;
             // Start sending to MQTT server

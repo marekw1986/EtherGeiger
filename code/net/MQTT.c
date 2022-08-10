@@ -590,8 +590,11 @@ void MQTTTask(void) {
 				else
 #endif
                 length = MQTTWriteString(MQTTClient.Topic.szRAM, MQTTBuffer,length);
-                MQTTBuffer[length++] = MQTTClient.QOS ? HIBYTE(MQTTClient.MsgId) : 0x00;
-                MQTTBuffer[length++] = MQTTClient.QOS ? LOBYTE(MQTTClient.MsgId) : 0x00;
+                
+                if (MQTTClient.QOS) {
+                    MQTTBuffer[length++] = HIBYTE(MQTTClient.MsgId);
+                    MQTTBuffer[length++] = LOBYTE(MQTTClient.MsgId);
+                }
 				WORD i;
 				for(i=0;i<MQTTClient.Plength;i++)
 					MQTTBuffer[length++] = MQTTClient.Payload.szRAM[i];		// idem ROM/RAM ..
