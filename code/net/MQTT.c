@@ -255,17 +255,17 @@ WORD MQTTEndUsage(void) {
 		MQTTDisconnect();
         printf("MQTTEndUsage: disconnecting MQTT\r\n");
     }
-
-	// Release the TCP socket, if in use
-	//if(MySocket != INVALID_SOCKET) {
-	//	TCPDisconnect(MySocket);
-	//	MySocket = INVALID_SOCKET;
-    //    printf("MQTTEndUsage: releasing socket\r\n");
-    //}
-	
-	// Release the MQTT module
-	//MQTTFlags.bits.MQTTInUse = FALSE;
-	//MQTTState = MQTT_HOME;
+    else {
+        // Release the TCP socket, if in use
+        if(MySocket != INVALID_SOCKET) {
+            TCPDisconnect(MySocket);
+            MySocket = INVALID_SOCKET;
+            printf("MQTTEndUsage: releasing socket\r\n");
+        } 
+        // Release the MQTT module
+        MQTTFlags.bits.MQTTInUse = FALSE;
+        MQTTState = MQTT_HOME;
+    }
 
 	if(MQTTFlags.bits.ReceivedSuccessfully)	{
         printf("MQTTEndUsage: success\r\n");
