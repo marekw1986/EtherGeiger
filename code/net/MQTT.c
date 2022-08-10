@@ -589,7 +589,9 @@ void MQTTTask(void) {
 					length = MQTTWriteString(MQTTClient.Topic.szROM, MQTTBuffer,length);
 				else
 #endif
-					length = MQTTWriteString(MQTTClient.Topic.szRAM, MQTTBuffer,length);
+                length = MQTTWriteString(MQTTClient.Topic.szRAM, MQTTBuffer,length);
+                MQTTBuffer[length++] = MQTTClient.QOS ? HIBYTE(MQTTClient.MsgId) : 0x00;
+                MQTTBuffer[length++] = MQTTClient.QOS ? LOBYTE(MQTTClient.MsgId) : 0x00;
 				WORD i;
 				for(i=0;i<MQTTClient.Plength;i++)
 					MQTTBuffer[length++] = MQTTClient.Payload.szRAM[i];		// idem ROM/RAM ..
@@ -599,7 +601,7 @@ void MQTTTask(void) {
 
 				//if(MQTTWrite(header,MQTTBuffer,length-5))		// si potrebbe spezzare in 2 per non rifare tutto il "prepare" qua sopra...
 				MQTTWrite(header,MQTTBuffer,length-5);
-                                MQTTState++;
+                MQTTState++;
 				MQTTResponseCode=MQTT_SUCCESS;
 
 				}
