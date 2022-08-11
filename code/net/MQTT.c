@@ -73,6 +73,8 @@
 
 #define ISPUBLISH   ((MQTTBuffer[0] & 0xF0) == MQTTPUBLISH)
 #define ISCONNACK   ((MQTTBuffer[0] & 0xF0) == MQTTCONNACK)
+#define ISSUBACK   ((MQTTBuffer[0] & 0xF0) == MQTTSUBACK)
+#define ISPUBACK   ((MQTTBuffer[0] & 0xF0) == MQTTPUBACK)
 /****************************************************************************
   Section:
 	MQTT Client Public Variables
@@ -616,15 +618,15 @@ void MQTTTask(void) {
 			if(MQTTClient.QOS>0) {			// FINIRE...
 
 				//BYTE llen;
-			WORD len= MQTTReadPacket(); //&llen
+                WORD len= MQTTReadPacket(); //&llen
 
 //			char myBuf[128];
 //			wsprintf(myBuf,"publish: len=%u, %02X,%02X,%02X,%02X",len,buffer[0],buffer[1],buffer[2],buffer[3]);
 //			AfxMessageBox(myBuf);
-				if(len >= 2) {		// finire!
-					MQTTState=MQTT_IDLE;
-					}
-				}
+                if( (len >= 2) && ISPUBACK) {		// TODO: Check MsgId
+                    MQTTState=MQTT_IDLE;
+                }
+            }
 			else
 				MQTTState=MQTT_IDLE;
 			break;
@@ -670,10 +672,10 @@ void MQTTTask(void) {
 //			char myBuf[128];
 //			wsprintf(myBuf,"subscribe: len=%u, %02X,%02X,%02X,%02X",len,buffer[0],buffer[1],buffer[2],buffer[3]);
 //			AfxMessageBox(myBuf);
-				if(len==4) {
+				if( (len==4) && ISSUBACK) {
 					MQTTState=MQTT_IDLE;
-					}
-				}
+                }
+            }
 			else
 				MQTTState=MQTT_IDLE;
 			break;
