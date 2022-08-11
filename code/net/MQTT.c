@@ -1141,7 +1141,7 @@ WORD MQTTReadPacket(void) {
 	switch(m_state) {
 		case 0:
 			if( (/*tmp=*/TCPIsGetReady(MySocket)) >= 4) {				// almeno 4 ci devono essere...
-				m_state++;
+				m_state=1;
                 //printf("MQTTReadPacket 2, Dostepne %d bajty, m_state=%d, len=%d\r\n", tmp, m_state, len);
             }
 			break;
@@ -1157,7 +1157,7 @@ WORD MQTTReadPacket(void) {
 				} while ((digit & 128) != 0);
 			lengthLength[0] = len-1;
             //printf("MQTTReadPacket 4, calculating length, m_state=%d, len=%d, length=%d, multiplier=%d, lengthLength[0]=%d, skip=%d\r\n", m_state, len, length, multiplier, lengthLength[0], skip);
-			m_state++;
+			m_state=2;
 
 		case 2:
 			if(ISPUBLISH) {
@@ -1177,7 +1177,7 @@ WORD MQTTReadPacket(void) {
             }
 			else {
                 //printf("MQTTReadPacket 6, m_state=%d, len=%d, length=%d, start=%d, skip=%d\r\n", m_state, len, length, start, skip);
-				m_state++;
+				m_state=3;
             }
 			//break;
 
@@ -1195,7 +1195,7 @@ WORD MQTTReadPacket(void) {
 						}
 					len++;
 					}
-				m_state++;
+				m_state=4;
 				}
 			//break;
 
