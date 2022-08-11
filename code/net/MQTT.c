@@ -203,8 +203,7 @@ static union {
   ***************************************************************************/
 BOOL MQTTBeginUsage(void) {
 
-	if(MQTTFlags.bits.MQTTInUse)
-		return FALSE;
+	if(MQTTFlags.bits.MQTTInUse) return FALSE;
 
 	MQTTFlags.Val = 0x00;
 	MQTTFlags.bits.MQTTInUse = TRUE;
@@ -244,8 +243,7 @@ BOOL MQTTBeginUsage(void) {
   ***************************************************************************/
 WORD MQTTEndUsage(void) {
     printf("MQTTEndUsage\r\n");
-	if(!MQTTFlags.bits.MQTTInUse)
-		return 0xFFFF;
+	if(!MQTTFlags.bits.MQTTInUse) return 0xFFFF;
     
 	// Release the DNS module, if in use
 	if(MQTTState == MQTT_NAME_RESOLVE) {
@@ -350,9 +348,9 @@ void MQTTTask(void) {
 					MQTTResponseCode = MQTT_RESOLVE_ERROR;
 					MQTTState = MQTT_HOME;
 					DNSEndUsage();
-					}
+                }
 				break;
-				}
+            }
 
 			// Release the DNS module, we no longer need it
 			if(!DNSEndUsage()) {
@@ -361,7 +359,7 @@ void MQTTTask(void) {
 				MQTTResponseCode = MQTT_RESOLVE_ERROR;
 				MQTTState = MQTT_HOME;
 				break;
-				}
+            }
 
 			MQTTState++;
 			// No need to break here
@@ -390,10 +388,10 @@ void MQTTTask(void) {
 				if(MQTTFlags.bits.ConnectedOnce || ((LONG)(TickGet()-Timer) > (LONG)(MQTT_SERVER_REPLY_TIMEOUT)))	{
 					MQTTResponseCode = MQTT_CONNECT_ERROR;
 					MQTTState = MQTT_CLOSE;
-					}
+                }
 
 				break;
-				}
+            }
 			MQTTFlags.bits.ConnectedOnce = TRUE;
 
 
@@ -407,22 +405,22 @@ void MQTTTask(void) {
 					WORD length = 5;
 					unsigned int j;
 
-					for(j=0; j<9; j++) 
-						MQTTBuffer[length++] = d[j];
+					for(j=0; j<9; j++) MQTTBuffer[length++] = d[j];
 
 					BYTE v;
 					if(MQTTClient.WillTopic.szRAM) {
 						MQTTClient.QOS=MQTTClient.WillQOS;
 						v = 0x06 | (MQTTClient.WillQOS<<3) | (MQTTClient.WillRetain<<5);
-						}
-					else 
+                    }
+					else { 
 						v = 0x02;
+                    }
 
 					if(MQTTClient.Username.szRAM) {
 						v |= 0x80;
 						if(MQTTClient.Password.szRAM) 
 							v = v | (0x80>>1);
- 						}
+                    }
 
 					MQTTBuffer[length++] = v;
 
@@ -448,7 +446,7 @@ void MQTTTask(void) {
 						else
 #endif
 							length = MQTTWriteString(MQTTClient.WillMessage.szRAM,MQTTBuffer,length);
-						}
+                    }
 
 					if(MQTTClient.Username.szRAM) {		// il check su union è ok!
 #if defined(__18CXX)
@@ -457,12 +455,12 @@ void MQTTTask(void) {
 							if(MQTTClient.Password.szRAM) {
 								if(MQTTClient.ROMPointers.Password) {
 									length = MQTTWriteROMString(MQTTClient.Password.szROM,MQTTBuffer,length);
-									}	
+                                }	
 								else {
 									length = MQTTWriteString(MQTTClient.Password.szRAM,MQTTBuffer,length);
-									}	
-								}
-							}	
+                                }	
+                            }
+                        }	
 						else {
 #endif
 							length = MQTTWriteString(MQTTClient.Username.szRAM,MQTTBuffer,length);
@@ -473,42 +471,21 @@ void MQTTTask(void) {
 								else
 #endif
 									length = MQTTWriteString(MQTTClient.Password.szRAM,MQTTBuffer,length);
-								}
+                            }
 #if defined(__18CXX)
-							}
+                        }
 #endif
-						}
-                                                    MQTTWrite(MQTTCONNECT,MQTTBuffer,length-5);
-                                                    MQTTState=MQTT_CONNECT_ACK;
-                                                    MQTTResponseCode=MQTT_SUCCESS;
-					//if(MQTTWrite(MQTTCONNECT,MQTTBuffer,length-5)){		// si potrebbe spezzare in 2 per non rifare tutto il "prepare" qua sopra...
-                                       // TCPPutArray(MySocket, MQTTBuffer, length-5);
-                                       // TCPFlush(MySocket);
-                                        //			MQTTState++;
-//					lastOutActivity = TickGet();	// già in write
-					//MQTTResponseCode=MQTT_SUCCESS;
-                                       // }
-
-					}
-                                    MQTTStop();
-                                    //lastInActivity =TickGet();
-				}
+                    }
+                    MQTTWrite(MQTTCONNECT,MQTTBuffer,length-5);
+                    MQTTState=MQTT_CONNECT_ACK;
+                    MQTTResponseCode=MQTT_SUCCESS;
+                }
+                MQTTStop();
+                //lastInActivity =TickGet();
+            }
 			break;
 		case MQTT_CONNECT_ACK:
-			lastInActivity =TickGet();
-
-            /*
-			while(!MQTTAvailable()) {
-				WORD t = TickGet();
-//								theApp.PumpMessage();
-				if(t-lastInActivity > TICK_SECOND*10) {
-					MQTTStop();
-					//MQTTState=MQTT_IDLE;
-					break;
-                }
-            }
-            */  
-			//BYTE llen[4];
+			lastInActivity =TickGet(); 
             printf("ZARAZ BEDZIE CIEMNO!\r\n");
 			WORD len= MQTTReadPacket();
             printf("len=%d\r\n\r\n", len);
@@ -542,23 +519,13 @@ void MQTTTask(void) {
                         printf("bad user or password!\r\n");
 						break;
 					case 5:		// unauthorized
-#ifdef _DEBUG
-						AfxMessageBox("unauthorized");
-#endif
 						MQTTClient.bConnected=FALSE;		// 
 						MQTTResponseCode=MQTT_UNAUTHORIZED;
                         printf("unauthorized!\r\n");
 						break;
-					}
-
-                                        MQTTState=MQTT_IDLE;    //go to idle now
-				}
-                        /*
-                    }
-                    else{
-                         MQTTState=MQTT_HOME;
-                    }
-                         * */
+                }
+                MQTTState=MQTT_IDLE;    //go to idle now
+            }
 			break;
 
 		case MQTT_PING:
@@ -568,7 +535,7 @@ void MQTTTask(void) {
 				MQTTPutArray(MQTTBuffer,2);
 				lastOutActivity = TickGet();
 				MQTTState=MQTT_IDLE;			// 
-				}
+            }
 			break;
 
 		case MQTT_PING_ACK:					// Pingback, 
@@ -578,7 +545,7 @@ void MQTTTask(void) {
 				MQTTPutArray(MQTTBuffer,2);
 				lastOutActivity = TickGet();
 				MQTTState=MQTT_IDLE;			// 
-				}
+            }
 			break;
 
 		case MQTT_PUBLISH:	
@@ -601,34 +568,31 @@ void MQTTTask(void) {
 				for(i=0;i<MQTTClient.Plength;i++)
 					MQTTBuffer[length++] = MQTTClient.Payload.szRAM[i];		// idem ROM/RAM ..
 				BYTE header = MQTTPUBLISH | (MQTTClient.QOS ? (MQTTClient.QOS==2 ? MQTTQOS2 : MQTTQOS1) : MQTTQOS0);
-				if(MQTTClient.Retained) 
-					header |= 1;
+				if(MQTTClient.Retained) header |= 1;
 
 				//if(MQTTWrite(header,MQTTBuffer,length-5))		// si potrebbe spezzare in 2 per non rifare tutto il "prepare" qua sopra...
 				MQTTWrite(header,MQTTBuffer,length-5);
                 MQTTState++;
 				MQTTResponseCode=MQTT_SUCCESS;
 
-				}
-			else
+            }
+			else {
 				MQTTResponseCode=MQTT_OPERATION_FAILED;
+            }
 			break;
 
 		case MQTT_PUBLISH_ACK:				// Publish command accepted (if QOS)
 			if(MQTTClient.QOS>0) {			// FINIRE...
-
 				//BYTE llen;
                 WORD len= MQTTReadPacket(); //&llen
 
-//			char myBuf[128];
-//			wsprintf(myBuf,"publish: len=%u, %02X,%02X,%02X,%02X",len,buffer[0],buffer[1],buffer[2],buffer[3]);
-//			AfxMessageBox(myBuf);
                 if( (len >= 2) && ISPUBACK) {		// TODO: Check MsgId
                     MQTTState=MQTT_IDLE;
                 }
             }
-			else
+			else {
 				MQTTState=MQTT_IDLE;
+            }
 			break;
 
 		case MQTT_SUBSCRIBE:	
@@ -643,8 +607,7 @@ void MQTTTask(void) {
 				// Leave room in the buffer for header and variable length field
 				WORD length = 5;
 				nextMsgId++;
-				if(nextMsgId == 0) 
-					 nextMsgId = 1;
+				if(nextMsgId == 0) nextMsgId = 1;
 
 				MQTTBuffer[length++] = HIBYTE(nextMsgId);
 				MQTTBuffer[length++] = LOBYTE(nextMsgId);
@@ -656,60 +619,48 @@ void MQTTTask(void) {
 					length = MQTTWriteString(MQTTClient.Topic.szRAM, MQTTBuffer,length);
 				MQTTBuffer[length++] = MQTTClient.QOS;
 
-				if(MQTTWrite(MQTTSUBSCRIBE | (MQTTClient.QOS ? (MQTTClient.QOS==2 ? MQTTQOS2 : MQTTQOS1) : MQTTQOS0),MQTTBuffer,length-5))		// si potrebbe spezzare in 2 per non rifare tutto il "prepare" qua sopra...
+				if(MQTTWrite(MQTTSUBSCRIBE | (MQTTClient.QOS ? (MQTTClient.QOS==2 ? MQTTQOS2 : MQTTQOS1) : MQTTQOS0),MQTTBuffer,length-5)) {		// si potrebbe spezzare in 2 per non rifare tutto il "prepare" qua sopra...
 					MQTTState++;
+                }
 				MQTTResponseCode=MQTT_SUCCESS;
-				}
-			else
+            }
+			else {
 				MQTTResponseCode=MQTT_OPERATION_FAILED;
-
+            }
 			break;
 
 		case MQTT_SUBSCRIBE_ACK:			// Subscribe command accepted (if QOS)
 			if(MQTTClient.QOS>0) {			// FINIRE...
 				WORD len= MQTTReadPacket();
    
-//			char myBuf[128];
-//			wsprintf(myBuf,"subscribe: len=%u, %02X,%02X,%02X,%02X",len,buffer[0],buffer[1],buffer[2],buffer[3]);
-//			AfxMessageBox(myBuf);
 				if( (len==4) && ISSUBACK) {
 					MQTTState=MQTT_IDLE;
                 }
             }
-			else
+			else {
 				MQTTState=MQTT_IDLE;
+            }
 			break;
 
 		case MQTT_PUBACK:	
-		// puback(WORD msgId) 
-
 			if(MQTTConnected()) {
 				// Leave room in the buffer for header and variable length field
 				WORD length = 5;
 				MQTTBuffer[length++] = HIBYTE(MQTTClient.MsgId);
 				MQTTBuffer[length++] = LOBYTE(MQTTClient.MsgId);
-				if(MQTTWrite(MQTTPUBACK,MQTTBuffer,length-5))
+				if(MQTTWrite(MQTTPUBACK,MQTTBuffer,length-5)) {
 					MQTTState=MQTT_IDLE;
-
-				// però in loop() faceva 			
-//			MQTTBuffer[0] = MQTTPUBACK;
-//			MQTTBuffer[1] = 2;
-//			MQTTBuffer[2] = HIBYTE(id);
-//			MQTTBuffer[3] = LOBYTE(id);
-//			MQTTPutArray(MQTTBuffer,4);
-//			lastOutActivity = t;
-
-				}
+                }
+            }
 			break;
 
-		case MQTT_UNSUBSCRIBE:	
-				//unsubscribe(const char *topic) 
+		case MQTT_UNSUBSCRIBE:	 
 			if(MQTTConnected()) {
 				WORD length = 5;
 				nextMsgId++;
-				if(nextMsgId == 0)
+				if(nextMsgId == 0) {
 					 nextMsgId = 1;
-			
+                }
 				MQTTBuffer[length++] = HIBYTE(nextMsgId);
 				MQTTBuffer[length++] = LOBYTE(nextMsgId);
 #if defined(__18CXX)
@@ -718,12 +669,14 @@ void MQTTTask(void) {
 				else
 #endif
 					length = MQTTWriteString(MQTTClient.Topic.szRAM, MQTTBuffer,length);
-				if(MQTTWrite(MQTTUNSUBSCRIBE | MQTTQOS1,MQTTBuffer,length-5))
+				if(MQTTWrite(MQTTUNSUBSCRIBE | MQTTQOS1,MQTTBuffer,length-5)) {
 					MQTTState++;
+                }
 				MQTTResponseCode=MQTT_SUCCESS;
-				}
-			else
+            }
+			else {
 				MQTTResponseCode=MQTT_OPERATION_FAILED;
+            }
 			break;
 
 		case MQTT_UNSUBSCRIBE_ACK:			// Subscribe command accepted (if QOS)
@@ -734,8 +687,7 @@ void MQTTTask(void) {
 			MQTTState++;
 			break;
 
-		case MQTT_DISCONNECT:	
-				//disconnect() 
+		case MQTT_DISCONNECT:	 
             printf("Disconnecting MQTT\r\n");
 			MQTTBuffer[0] = MQTTDISCONNECT;
 			MQTTBuffer[1] = 0;
@@ -759,8 +711,9 @@ void MQTTTask(void) {
 			break;
 
 		case MQTT_QUIT:	
-			if(MySocket != INVALID_SOCKET)
+			if(MySocket != INVALID_SOCKET) {
 				TCPClose(MySocket);
+            }
 			MQTTState = MQTT_HOME;
             MQTTFlags.bits.MQTTInUse = FALSE;
 			break;
@@ -773,8 +726,8 @@ void MQTTTask(void) {
 						MQTTState=MQTT_PING;
 						MQTTFlags.bits.PingOutstanding = TRUE;
                                                 LastPingTick = TickGet();
-					 }
-					}
+                    }
+                }
 				if(MQTTAvailable()) {
 					WORD len = MQTTReadPacket();
 					WORD msgId = 0;
@@ -790,8 +743,9 @@ void MQTTTask(void) {
 									WORD tl = MAKEWORD(MQTTBuffer[2],MQTTBuffer[1]);
 									char *topic=malloc(tl+1);
 
-									for(i=0; i<tl; i++)
+									for(i=0; i<tl; i++) {
 										topic[i] = MQTTBuffer[3+i];
+                                    }
 									topic[tl] = 0;
 									// msgId only present for QOS>0
 									if((MQTTBuffer[0] & 0x06) == MQTTQOS1) {
@@ -800,13 +754,13 @@ void MQTTTask(void) {
 										MQTTClient.m_Callback(topic,payload,len-3-tl-2);
 
 										MQTTPubACK(msgId);
-										} 
+                                    } 
 									else {
 										payload = MQTTBuffer+3+tl;
 										MQTTClient.m_Callback(topic,payload,len-3-tl);
-										}
+                                    }
 									free(topic);
-									}
+                                }
 								break;
 							case MQTTPINGREQ:
 								MQTTState=MQTT_PING_ACK;
@@ -853,14 +807,12 @@ void MQTTTask(void) {
 	FALSE - The MQTT Client is terminated and is ready to be released.
   ***************************************************************************/
 BOOL MQTTIsBusy(void) {
-
 	return MQTTState != MQTT_HOME;
-	}
+}
 
 BOOL MQTTIsIdle(void) {
-
 	return MQTTState != MQTT_IDLE;
-	}
+}
 
 /*****************************************************************************
   Function:
@@ -890,23 +842,11 @@ BOOL MQTTIsIdle(void) {
 WORD MQTTPutArray(BYTE* Data, WORD Len) {
 	WORD result = 0;
 
-        result = TCPPutArray(MySocket, Data, Len);
-        TCPFlush(MySocket);
-
-        /*
-	while(Len--) {
-		if(TCPPut(MySocket,*Data++)) {
-			result++;
-			}
-		else {
-			Data--;
-			break;
-			}
-		}
-         */
+    result = TCPPutArray(MySocket, Data, Len);
+    TCPFlush(MySocket);
 
 	return result;
-	}
+}
 
 /*****************************************************************************
   Function:
@@ -985,15 +925,15 @@ WORD MQTTPutString(BYTE* Data) {
 	while(*Data) {
 		if(TCPPut(MySocket,*Data++)) {
 			result++;
-			}
+        }
 		else {
 			Data--;
 			break;
-			}
-		}
+        }
+    }
 
 	return result;
-	}
+}
 
 /*****************************************************************************
   Function:
@@ -1052,45 +992,44 @@ BOOL MQTTWrite(BYTE header, BYTE *buf, WORD length) {
 	BYTE len = length;
 	int i;
 
-  do {
-    digit = len % 128;
-    len = len / 128;
-    if(len > 0) {
-      digit |= 0x80;
-      }
-    lenBuf[pos++] = digit;
-    llen++;
-		} while(len>0);
+    do {
+        digit = len % 128;
+        len = len / 128;
+        if(len > 0) {
+            digit |= 0x80;
+        }
+        lenBuf[pos++] = digit;
+        llen++;
+    } while(len>0);
 
 	buf[4-llen] = header;
 	for(i=0;i<llen;i++) {
-                buf[5-llen+i] = lenBuf[i];
-		}
-        WORD txlen = length+1+llen;
+        buf[5-llen+i] = lenBuf[i];
+    }
+    WORD txlen = length+1+llen;
 	if(TCPIsPutReady(MySocket) >= txlen) {   //length+1+llen
-               // word bsent = TCPPutArray(MySocket, buf+(4-llen), txlen);
-               // TCPFlush(MySocket);
-		rc = MQTTPutArray(buf+(4-llen),txlen);
-                lastOutActivity = TickGet();
-		return (rc==txlen);
-		}
-	else
+        rc = MQTTPutArray(buf+(4-llen),txlen);
+        lastOutActivity = TickGet();
+        return (rc==txlen);
+    }
+	else {
 		return 0;
-	}
+    }
+}
 
 WORD MQTTWriteString(const char *string, BYTE *buf, WORD pos) {
-  const char *idp = string;
-  WORD i=0;
+    const char *idp = string;
+    WORD i=0;
 
-  pos += 2;
-  while (*idp) {
-    buf[pos++] = *idp++;
-    i++;
-		}
-	buf[pos-i-2] = HIBYTE(i);
-	buf[pos-i-1] = LOBYTE(i);
-	return pos;
-	}
+    pos += 2;
+    while (*idp) {
+        buf[pos++] = *idp++;
+        i++;
+    }
+    buf[pos-i-2] = HIBYTE(i);
+    buf[pos-i-1] = LOBYTE(i);
+    return pos;
+}
 
 #if defined(__18CXX)
 WORD MQTTWriteROMString(const ROMchar *string, BYTE *buf, WORD pos) {
@@ -1109,21 +1048,21 @@ WORD MQTTWriteROMString(const ROMchar *string, BYTE *buf, WORD pos) {
 #endif
 
 BOOL MQTTConnected(void) {
-  BOOL rc;
+    BOOL rc;
 
-  rc = MQTTClient.bConnected;
-  if(!rc) 
+    rc = MQTTClient.bConnected;
+    if(!rc) { 
 		MQTTStop();
-
-  return rc;
-	}
+    }
+    return rc;
+}
 
 inline BYTE MQTTReadByte(void) {		// ottimizzare, evitare..?
 	BYTE ch;
 
 	TCPGet(MySocket,&ch);
 	return ch;
-	}
+}
 
 WORD MQTTReadPacket(void) {
 	WORD len = 0;
@@ -1217,7 +1156,7 @@ WORD MQTTReadPacket(void) {
     
     //printf("MQTTReadPacket 10, returning len after case/switch, m_state=%d, len=%d, length=%d\r\n", m_state, len, length);
 	return len;
-	}
+}
 
 
 void MQTTCallback(const char *topic, const BYTE *payload, WORD length) {
