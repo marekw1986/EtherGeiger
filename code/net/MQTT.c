@@ -600,8 +600,9 @@ void MQTTTask(void) {
 
 		// mmm no	m_QOS=qos;
 		// ma cmq usiamo lo stesso, per praticità...
-			if(/*MQTTClient.QOS < 0 || boh */ MQTTClient.QOS > 1)
+			if(/*MQTTClient.QOS < 0 || boh */ MQTTClient.QOS > 1) {
 				break;
+            }
 
 			if(MQTTConnected()) {
 				// Leave room in the buffer for header and variable length field
@@ -697,7 +698,7 @@ void MQTTTask(void) {
 				MQTTState=MQTT_CLOSE;
                 printf("Disconnect message sent\r\n");
 				MQTTStop();
-				}
+            }
 			break;
 
 		case MQTT_CLOSE:
@@ -1095,7 +1096,7 @@ WORD MQTTReadPacket(void) {
 				MQTTBuffer[len++] = digit;
 				length += (digit & 127) * multiplier;
 				multiplier *= 128;
-				} while ((digit & 128) != 0);
+            } while ((digit & 128) != 0);
 			lengthLength[0] = len-1;
             //printf("MQTTReadPacket 4, calculating length, m_state=%d, len=%d, length=%d, multiplier=%d, lengthLength[0]=%d, skip=%d\r\n", m_state, len, length, multiplier, lengthLength[0], skip);
 			m_state=2;
@@ -1112,7 +1113,7 @@ WORD MQTTReadPacket(void) {
 					if(MQTTBuffer[0] & MQTTQOS1) {
 						// skip message id
 						skip += 2;
-						}
+                    }
 					m_state=3;
                 }
             }
@@ -1129,15 +1130,15 @@ WORD MQTTReadPacket(void) {
 					digit = MQTTReadByte();
 					if(MQTTClient.Stream) {
 						if(ISPUBLISH && len-*lengthLength-2>skip) {
-							}
-						}
+                        }
+                    }
 					if(len < MQTT_MAX_PACKET_SIZE) {
 						MQTTBuffer[len]=digit;
-						}
+                    }
 					len++;
-					}
+                }
 				m_state=4;
-				}
+            }
 			//break;
 
 		case 4:
@@ -1145,7 +1146,7 @@ WORD MQTTReadPacket(void) {
 			m_state=0;
 			if(!MQTTClient.Stream && len > MQTT_MAX_PACKET_SIZE) {
 				len = 0; // This will cause the packet to be ignored.
-				}
+            }
 
 			MQTTFlags.bits.ReceivedSuccessfully=len>0;		// boh tanto per...
 

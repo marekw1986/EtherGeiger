@@ -260,10 +260,13 @@ void handle_mqtt(void) {
 		MQTT_CLIENT_BEGIN,
 		MQTT_CLIENT_CONNECT,
 		MQTT_CLIENT_CONNECT_WAIT,
-		MQTT_CLIENT_PUBLISH,
+		//MQTT_CLIENT_SUBSCRIBE,
+		//MQTT_CLIENT_SUBSCRIBE_WAIT,
+        MQTT_CLIENT_PUBLISH,
 		MQTT_CLIENT_PUBLISH_WAIT,
 		MQTT_CLIENT_FINISHING,
-		MQTT_CLIENT_DONE
+		MQTT_CLIENT_DONE,
+        //MQTT_CLIENT_IDLE
 	} MQTTClientState = MQTT_CLIENT_HOME;
     
 	static DWORD WaitTime;
@@ -283,7 +286,7 @@ void handle_mqtt(void) {
             port = config.mqtt_port;
             mqtt_timer = millis();
             RequestTimeoutTimer = millis();
-            MQTTClientState++;
+            MQTTClientState=MQTT_CLIENT_BEGIN;
 		}
 		break;
 
@@ -309,7 +312,7 @@ void handle_mqtt(void) {
             MQTTClient.QOS=1;
             MQTTClient.KeepAlive=MQTT_KEEPALIVE_LONG;
             //  MQTTClient.Stream = stream;
-            MQTTClientState++;
+            MQTTClientState=MQTT_CLIENT_CONNECT;
         }
         else {
             if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) MQTTClientState = MQTT_CLIENT_DONE;
@@ -318,24 +321,42 @@ void handle_mqtt(void) {
 
 		case MQTT_CLIENT_CONNECT:
         MQTTConnect(MQTTClient.ConnectId.szRAM,MQTTClient.Username.szRAM,MQTTClient.Password.szRAM, NULL,0,0,NULL);
-        MQTTClientState++;
+        MQTTClientState=MQTT_CLIENT_CONNECT_WAIT;
 		break;
 
 		case MQTT_CLIENT_CONNECT_WAIT:
         if(MQTTConnected()) {
-            MQTTClientState++;
+            MQTTClientState=MQTT_CLIENT_PUBLISH;
         }
         else {
             if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) MQTTClientState = MQTT_CLIENT_DONE;
         }
 		break;
+        
+        /*
+		case MQTT_CLIENT_SUBSCRIBE:
+        MQTTSubscribe(topic, 1);
+        MQTTClientState++;
+		break;
+
+		case MQTT_CLIENT_SUBSCRIBE_WAIT:
+        if (!MQTTIsBusy())	{
+            MQTTClientState = MQTT_CLIENT_IDLE;
+        }
+        else {
+            if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) {
+                MQTTClientState = MQTT_CLIENT_DONE;
+            }
+        }
+		break; 
+        */       
 
 		case MQTT_CLIENT_PUBLISH:
         MQTTClient.Topic.szRAM = topic;
         constructJSON(JSONbuffer, sizeof(JSONbuffer)-2);
         MQTTClient.Payload.szRAM = JSONbuffer;
         MQTTPublish(MQTTClient.Topic.szRAM,MQTTClient.Payload.szRAM,strlen(MQTTClient.Payload.szRAM),0);		// così... ROM?
-        MQTTClientState++;
+        MQTTClientState=MQTT_CLIENT_PUBLISH_WAIT;
 		break;
 
 		case MQTT_CLIENT_PUBLISH_WAIT:
