@@ -75,6 +75,8 @@
 #define ISCONNACK   ((MQTTBuffer[0] & 0xF0) == MQTTCONNACK)
 #define ISSUBACK   ((MQTTBuffer[0] & 0xF0) == MQTTSUBACK)
 #define ISPUBACK   ((MQTTBuffer[0] & 0xF0) == MQTTPUBACK)
+
+void MQTTPrepareBuffer(void);
 /****************************************************************************
   Section:
 	MQTT Client Public Variables
@@ -93,6 +95,9 @@ static TCP_SOCKET MySocket = INVALID_SOCKET;	// Socket currently in use by the M
 WORD MQTTResponseCode;
 
 BYTE MQTTBuffer[MQTT_MAX_PACKET_SIZE];
+WORD len = 0;
+DWORD multiplier = 1;
+WORD length = 0;
 
 static WORD lastInActivity=0,lastOutActivity=0;
 
@@ -477,6 +482,7 @@ void MQTTTask(void) {
 #endif
                     }
                     MQTTWrite(MQTTCONNECT,MQTTBuffer,length-5);
+                    MQTTPrepareBuffer();
                     MQTTState=MQTT_CONNECT_ACK;
                     MQTTResponseCode=MQTT_SUCCESS;
                 }
@@ -572,7 +578,8 @@ void MQTTTask(void) {
 
 				//if(MQTTWrite(header,MQTTBuffer,length-5))		// si potrebbe spezzare in 2 per non rifare tutto il "prepare" qua sopra...
 				MQTTWrite(header,MQTTBuffer,length-5);
-                MQTTState++;
+                MQTTPrepareBuffer();
+                MQTTState=MQTT_PUBLISH_ACK;
 				MQTTResponseCode=MQTT_SUCCESS;
 
             }
@@ -621,7 +628,8 @@ void MQTTTask(void) {
 				MQTTBuffer[length++] = MQTTClient.QOS;
 
 				if(MQTTWrite(MQTTSUBSCRIBE | (MQTTClient.QOS ? (MQTTClient.QOS==2 ? MQTTQOS2 : MQTTQOS1) : MQTTQOS0),MQTTBuffer,length-5)) {		// si potrebbe spezzare in 2 per non rifare tutto il "prepare" qua sopra...
-					MQTTState++;
+					MQTTState=MQTT_SUBSCRIBE_ACK;
+                    MQTTPrepareBuffer();
                 }
 				MQTTResponseCode=MQTT_SUCCESS;
             }
@@ -1058,18 +1066,19 @@ BOOL MQTTConnected(void) {
     return rc;
 }
 
-inline BYTE MQTTReadByte(void) {		// ottimizzare, evitare..?
-	BYTE ch;
+inline BOOL MQTTReadByte(BYTE *ch) {		// ottimizzare, evitare..?
+	if (TCPGet(MySocket, ch)) return TRUE;
+	return FALSE;
+}
 
-	TCPGet(MySocket,&ch);
-	return ch;
+void MQTTPrepareBuffer(void) {
+    len = 0;
+    multiplier = 1;
+	length = 0;
 }
 
 WORD MQTTReadPacket(void) {
-	WORD len = 0;
 	//BOOL isPublish = (MQTTBuffer[0] & 0xF0) == MQTTPUBLISH;
-	DWORD multiplier = 1;
-	WORD length = 0;
 	BYTE digit = 0;
 	WORD skip = 0;
 	BYTE start = 0;
@@ -1082,32 +1091,40 @@ WORD MQTTReadPacket(void) {
     //printf("MQTTReadPacket 1, m_state=%d, len=%d\r\n", m_state, len);
 	switch(m_state) {
 		case 0:
-			if( (/*tmp=*/TCPIsGetReady(MySocket)) >= 4) {				// almeno 4 ci devono essere...
-				m_state=1;
+			if( (/*tmp=*/TCPIsGetReady(MySocket)) >= 1) {				// almeno 4 ci devono essere...
+                if (MQTTReadByte(&digit)) {
+                    MQTTBuffer[len++] = digit;
+                    m_state=1;
+                }
                 //printf("MQTTReadPacket 2, Dostepne %d bajty, m_state=%d, len=%d\r\n", tmp, m_state, len);
             }
 			break;
 		case 1:
-			MQTTBuffer[len++] = MQTTReadByte();
             //printf("MQTTReadPacket 3, m_state=%d, len=%d, MQTTBuffer[0]=%d\r\n", m_state, len, MQTTBuffer[0]);
             //printf("It %s CONNACK message\r\n", ISCONNACK ? "is":"isn't");
-			do {
-				digit = MQTTReadByte();
-				MQTTBuffer[len++] = digit;
-				length += (digit & 127) * multiplier;
-				multiplier *= 128;
-            } while ((digit & 128) != 0);
+            if (MQTTReadByte(&digit)) {
+                MQTTBuffer[len++] = digit;
+                length += (digit & 127) * multiplier;
+                multiplier *= 128;
+            }           
+            if ((digit & 128) == 0) {
+                break;
+            }
 			lengthLength[0] = len-1;
             //printf("MQTTReadPacket 4, calculating length, m_state=%d, len=%d, length=%d, multiplier=%d, lengthLength[0]=%d, skip=%d\r\n", m_state, len, length, multiplier, lengthLength[0], skip);
 			m_state=2;
-
+            break;
 		case 2:
 			if(ISPUBLISH) {
                 //printf("MQTTReadPacket 5, m_state=%d, it is PUBLISH message\r\n", m_state);
 				if(TCPIsGetReady(MySocket) >= 2) {			// almeno 2 ci devono essere...
 					// Read in topic length to calculate bytes to skip over for Stream writing
-					MQTTBuffer[len++] = MQTTReadByte();
-					MQTTBuffer[len++] = MQTTReadByte();
+					if (MQTTReadByte(&digit)) {
+                        MQTTBuffer[len++] = digit;
+                    }
+					if (MQTTReadByte(&digit)) {
+                        MQTTBuffer[len++] = digit;
+                    }
 					skip = MAKEWORD(MQTTBuffer[lengthLength[2]],MQTTBuffer[lengthLength[1]]);
 					start=2;
 					if(MQTTBuffer[0] & MQTTQOS1) {
@@ -1127,15 +1144,16 @@ WORD MQTTReadPacket(void) {
 			if(TCPIsGetReady(MySocket) >= length) {
                 //printf("MQTTReadPacket 7, TCPIsGetReady() >= length, m_state=%d, len=%d, length=%d, start=%d, skip=%d\r\n", m_state, len, length, start, skip);
 				for(i=start; i<length; i++) {
-					digit = MQTTReadByte();
-					if(MQTTClient.Stream) {
-						if(ISPUBLISH && len-*lengthLength-2>skip) {
+					if (MQTTReadByte(&digit)) {
+                        if(MQTTClient.Stream) {
+                            if(ISPUBLISH && len-*lengthLength-2>skip) {
+                            }
                         }
+                        if(len < MQTT_MAX_PACKET_SIZE) {
+                            MQTTBuffer[len]=digit;
+                        }
+                        len++;
                     }
-					if(len < MQTT_MAX_PACKET_SIZE) {
-						MQTTBuffer[len]=digit;
-                    }
-					len++;
                 }
 				m_state=4;
             }

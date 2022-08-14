@@ -227,7 +227,7 @@ WORD MQTTReadPacket(void);  //BYTE *
 BOOL MQTTPut(BYTE c);
 WORD MQTTPutArray(BYTE *Data, WORD Len);
 WORD MQTTPutString(BYTE *Data);
-BYTE MQTTReadByte(void);
+BOOL MQTTReadByte(BYTE *ch);
 BOOL MQTTConnected(void);
 #define MQTTAvailable() TCPIsGetReady(MySocket)
 
