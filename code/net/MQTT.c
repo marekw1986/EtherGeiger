@@ -1102,7 +1102,7 @@ void MQTTPrepareBuffer(void) {
 BOOL MQTTReadPacket(WORD *retlen) {
 	BYTE digit = 0;
 	WORD i;
-    static BYTE lengthLength[10];
+    static BYTE lengthLength;
     
     //printf("MQTTReadPacket 1, m_state=%d, len=%d\r\n", MQTTBufferMState, MQTTBufferLen);
 	switch(MQTTBufferMState) {
@@ -1128,7 +1128,7 @@ BOOL MQTTReadPacket(WORD *retlen) {
                 //printf("MQTTReadPacket 3b. There will be another len packet\r\n");
                 break;
             }
-			lengthLength[0] = MQTTBufferLen-1;
+			lengthLength = MQTTBufferLen-1;
             //printf("MQTTReadPacket 4, calculating length, m_state=%d, len=%d, length=%d, multiplier=%d, lengthLength[0]=%d, skip=%d\r\n", MQTTBufferMState, MQTTBufferLen, MQTTBufferLength, MQTTBufferMultiplier, lengthLength[0], MQTTBufferSkip);
 			MQTTBufferMState=2;
             break;
@@ -1144,12 +1144,14 @@ BOOL MQTTReadPacket(WORD *retlen) {
 					MQTTReadByte(&digit);
                     MQTTBuffer[MQTTBufferLen++] = digit;
 
-					MQTTBufferSkip = MAKEWORD(MQTTBuffer[lengthLength[2]],MQTTBuffer[lengthLength[1]]);
+					MQTTBufferSkip = MAKEWORD(MQTTBuffer[MQTTBufferLen-2],MQTTBuffer[MQTTBufferLen-1]);
+                    printf("MQTTReadPacket: Analyzing ISPUBLISH. Topic length: %d\r\n", MQTTBufferSkip);
 					MQTTBufferStart=2;
 					if(MQTTBuffer[0] & MQTTQOS1) {
 						// skip message id
 						MQTTBufferSkip += 2;
                     }
+                    printf("MQTTReadPacket: Buffer skip including MsgId (if QoS enabled): %d\r\n", MQTTBufferSkip);
 					MQTTBufferMState=3;
                 }
             }
@@ -1165,7 +1167,7 @@ BOOL MQTTReadPacket(WORD *retlen) {
 				for(i=MQTTBufferStart; i<MQTTBufferLength; i++) {
 					if (MQTTReadByte(&digit)) {
                         if(MQTTClient.Stream) {
-                            if(ISPUBLISH && MQTTBufferLen-*lengthLength-2>MQTTBufferSkip) {
+                            if(ISPUBLISH && MQTTBufferLen-lengthLength-2>MQTTBufferSkip) {
                             }
                         }
                         if(MQTTBufferLen < MQTT_MAX_PACKET_SIZE) {
