@@ -223,7 +223,7 @@ void MQTTCallback(const char *, const BYTE *, WORD );
 
 BOOL MQTTWrite(BYTE , BYTE *, WORD );
 WORD MQTTWriteString(const char *, BYTE *, WORD );
-WORD MQTTReadPacket(void);  //BYTE *
+BOOL MQTTReadPacket(WORD *retlen);  //BYTE *
 BOOL MQTTPut(BYTE c);
 WORD MQTTPutArray(BYTE *Data, WORD Len);
 WORD MQTTPutString(BYTE *Data);
