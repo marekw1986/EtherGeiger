@@ -104,7 +104,7 @@ static BYTE MQTTBufferMState=0;
 
 static WORD lastInActivity=0,lastOutActivity=0;
 
-static WORD LastPingTick = 0;
+static DWORD LastPingTick = 0;
 
 // Message state machine for the MQTT Client
 static enum {
@@ -497,7 +497,7 @@ void MQTTTask(void) {
 			lastInActivity =TickGet(); 
             printf("ZARAZ BEDZIE CIEMNO!\r\n");
 			WORD len = 0;
-            if(!MQTTReadPacket(&len)) {
+            if(!MQTTReadPacket(&len, NULL)) {
                 printf("Packet not yet received \r\n");
                 break;
             }
@@ -537,6 +537,7 @@ void MQTTTask(void) {
                         printf("unauthorized!\r\n");
 						break;
                 }
+                MQTTPrepareBuffer();
                 MQTTState=MQTT_IDLE;    //go to idle now
             }
 			break;
@@ -547,7 +548,9 @@ void MQTTTask(void) {
 			if(TCPIsPutReady(MySocket) >= 2) {
 				MQTTPutArray(MQTTBuffer,2);
 				lastOutActivity = TickGet();
-				MQTTState=MQTT_IDLE;			// 
+                //MQTTPrepareBuffer();
+				MQTTState=MQTT_IDLE;			//
+                printf("Sending MQTT_PING\r\n");
             }
 			break;
 
@@ -557,7 +560,9 @@ void MQTTTask(void) {
 			if(TCPIsPutReady(MySocket)>=2) {
 				MQTTPutArray(MQTTBuffer,2);
 				lastOutActivity = TickGet();
+                MQTTPrepareBuffer();
 				MQTTState=MQTT_IDLE;			// 
+                printf("Sending MQTT_PING_ACK\r\n");
             }
 			break;
 
@@ -599,16 +604,19 @@ void MQTTTask(void) {
 			if(MQTTClient.QOS>0) {			// FINIRE...
 				//BYTE llen;
                 WORD len=0;
-                if(!MQTTReadPacket(&len)) {
+                printf("MQTTReadPacket: MQTT_PUBLISH_ACK\r\n");
+                if(!MQTTReadPacket(&len, NULL)) {
                     printf("Packet not yet received \r\n");
                     break;
                 }
 
                 if( (len >= 2) && ISPUBACK) {		// TODO: Check MsgId
+                    MQTTPrepareBuffer();
                     MQTTState=MQTT_IDLE;
                 }
             }
 			else {
+                MQTTPrepareBuffer();
 				MQTTState=MQTT_IDLE;
             }
 			break;
@@ -652,16 +660,20 @@ void MQTTTask(void) {
 		case MQTT_SUBSCRIBE_ACK:			// Subscribe command accepted (if QOS)
 			if(MQTTClient.QOS>0) {			// FINIRE...
 				WORD len=0;
-                if(!MQTTReadPacket(&len)) {
+                printf("MQTTReadPacket: MQTT_SUBSCRIBE_ACK\r\n");
+                if(!MQTTReadPacket(&len, NULL)) {
                     printf("Packet not yet received \r\n");
                     break;
                 }
    
-				if( (len==4) && ISSUBACK) {
+				if( (len>=3) && ISSUBACK) {
+                    printf("SUBACK received\r\n");
+                    MQTTPrepareBuffer();
 					MQTTState=MQTT_IDLE;
                 }
             }
 			else {
+                MQTTPrepareBuffer();
 				MQTTState=MQTT_IDLE;
             }
 			break;
@@ -673,6 +685,7 @@ void MQTTTask(void) {
 				MQTTBuffer[length++] = HIBYTE(MQTTClient.MsgId);
 				MQTTBuffer[length++] = LOBYTE(MQTTClient.MsgId);
 				if(MQTTWrite(MQTTPUBACK,MQTTBuffer,length-5)) {
+                    MQTTPrepareBuffer();
 					MQTTState=MQTT_IDLE;
                 }
             }
@@ -704,6 +717,7 @@ void MQTTTask(void) {
 			break;
 
 		case MQTT_UNSUBSCRIBE_ACK:			// Subscribe command accepted (if QOS)
+            MQTTPrepareBuffer();
 			MQTTState=MQTT_IDLE;
 			break;
 
@@ -741,65 +755,88 @@ void MQTTTask(void) {
 			MQTTState = MQTT_HOME;
             MQTTFlags.bits.MQTTInUse = FALSE;
 			break;
+            
 		case MQTT_IDLE:	
 			if(MQTTConnected()) {
-				WORD t = TickGet();
+				DWORD t = TickGet();
 				WORD i;
-				if(t - LastPingTick >   MQTT_KEEPALIVE_REALTIME*TICK_SECOND) {
+                if((DWORD)(t-LastPingTick) > (MQTT_KEEPALIVE_LONG*TICK_SECOND)) {
+				//if((DWORD)(t-LastPingTick) > (MQTT_KEEPALIVE_REALTIME*TICK_SECOND)) {
+                //if((DWORD)(t-LastPingTick) > (MQTTClient.KeepAlive*TICK_SECOND)) {    
 					if( !MQTTFlags.bits.PingOutstanding) {
+                        printf("Setting state to MQTT_PING\r\n");
 						MQTTState=MQTT_PING;
 						MQTTFlags.bits.PingOutstanding = TRUE;
-                                                LastPingTick = TickGet();
+                        LastPingTick = TickGet();
                     }
                 }
-				if(MQTTAvailable()) {
-					WORD len = 0;
-                    if(!MQTTReadPacket(&len)) {
-                        printf("Packet not yet received \r\n");
+                
+                WORD len = 0;
+                BYTE ll = 0;
+                if(!MQTTReadPacket(&len, &ll)) {
+                    break;
+                }
+                printf("MQTT: message received, len=%d, ll=%d\r\n", len, ll);
+                WORD msgId = 0;
+                //BYTE *payload;
+
+                lastInActivity = t;
+                BYTE type = MQTTBuffer[0] & 0xF0;
+                switch(type) {
+                    case MQTTPUBLISH:
+                        /*
+                        if(MQTTClient.m_Callback) {
+                            WORD tl = MAKEWORD(MQTTBuffer[2],MQTTBuffer[1]);
+                            char *topic=malloc(tl+1);
+
+                            for(i=0; i<tl; i++) {
+                                topic[i] = MQTTBuffer[3+i];
+                            }
+                            topic[tl] = 0;
+                            // msgId only present for QOS>0
+                            if((MQTTBuffer[0] & 0x06) == MQTTQOS1) {
+                                msgId = MAKEWORD(MQTTBuffer[3+tl+1],MQTTBuffer[3+tl]);
+                                payload = MQTTBuffer+3+tl+2;
+                                MQTTClient.m_Callback(topic,payload,len-3-tl-2);
+
+                                MQTTPubACK(msgId);
+                            } 
+                            else {
+                                payload = MQTTBuffer+3+tl;
+                                MQTTClient.m_Callback(topic,payload,len-3-tl);
+                            }
+                            free(topic);
+                        }
+                        */
+                        printf("Received message is MQTTPUBLISH\r\n");
+                        WORD topicLenIndex = 1 + ll + ((MQTTBuffer[0] & MQTTQOS1) ? 2 : 0);
+                        printf("topicLenIndex=%d, MQTTBuffer[topicLenIndex]=%d, MQTTBuffer[topicLenIndex+1]=%d\r\n", topicLenIndex, MQTTBuffer[topicLenIndex], MQTTBuffer[topicLenIndex+1]);
+                        WORD topicLen = MAKEWORD(MQTTBuffer[topicLenIndex+1], MQTTBuffer[topicLenIndex]);
+                        printf("Received topic len: %d\r\n", topicLen);
+                        char tmp[512];
+                        memcpy(tmp, &MQTTBuffer[topicLenIndex+2], topicLen);
+                        tmp[topicLen] = '\0';
+                        printf("Received topic: %s\r\n", tmp);
+                        BYTE *payload = MQTTBuffer+topicLenIndex+2+topicLen;
+                        WORD payloadLen = len - topicLenIndex - 2 - topicLen;
+                        memcpy(tmp, payload, payloadLen);
+                        tmp[payloadLen] = '\0';
+                        printf("Received payload: %s\r\n", tmp);
                         break;
-                    }
-					WORD msgId = 0;
-					BYTE *payload;
-
-					if(len > 0) {
-						lastInActivity = t;
-						BYTE type = MQTTBuffer[0] & 0xF0;
-
-						switch(type) {
-							case MQTTPUBLISH:
-								if(MQTTClient.m_Callback) {
-									WORD tl = MAKEWORD(MQTTBuffer[2],MQTTBuffer[1]);
-									char *topic=malloc(tl+1);
-
-									for(i=0; i<tl; i++) {
-										topic[i] = MQTTBuffer[3+i];
-                                    }
-									topic[tl] = 0;
-									// msgId only present for QOS>0
-									if((MQTTBuffer[0] & 0x06) == MQTTQOS1) {
-										msgId = MAKEWORD(MQTTBuffer[3+tl+1],MQTTBuffer[3+tl]);
-										payload = MQTTBuffer+3+tl+2;
-										MQTTClient.m_Callback(topic,payload,len-3-tl-2);
-
-										MQTTPubACK(msgId);
-                                    } 
-									else {
-										payload = MQTTBuffer+3+tl;
-										MQTTClient.m_Callback(topic,payload,len-3-tl);
-                                    }
-									free(topic);
-                                }
-								break;
-							case MQTTPINGREQ:
-								MQTTState=MQTT_PING_ACK;
-								break;
-							case MQTTPINGRESP:
-								MQTTFlags.bits.PingOutstanding = FALSE;
-								break;
-							}
-						}
-					}
-				}
+                    case MQTTPINGREQ:
+                        printf("Received message is MQTTPINGREQ\r\n");
+                        MQTTState=MQTT_PING_ACK;
+                        break;
+                    case MQTTPINGRESP:
+                        printf("Received message is MQTTPINGRESP\r\n");
+                        MQTTFlags.bits.PingOutstanding = FALSE;
+                        break;
+                    default:
+                        printf("Received message is different: %d\r\n", MQTTBuffer[0]);
+                        break;
+                }
+                MQTTPrepareBuffer();
+            }
 			break;
 	
 		}
@@ -839,7 +876,7 @@ BOOL MQTTIsBusy(void) {
 }
 
 BOOL MQTTIsIdle(void) {
-	return MQTTState != MQTT_IDLE;
+	return MQTTState == MQTT_IDLE;
 }
 
 /*****************************************************************************
@@ -1099,18 +1136,15 @@ void MQTTPrepareBuffer(void) {
     MQTTBufferMState=0;
 }
 
-BOOL MQTTReadPacket(WORD *retlen) {
+BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
 	BYTE digit = 0;
 	WORD i;
     static BYTE lengthLength;
     
-    //printf("MQTTReadPacket 1, m_state=%d, len=%d\r\n", MQTTBufferMState, MQTTBufferLen);
 	switch(MQTTBufferMState) {
 		case 0:
             if (MQTTReadByte(&digit)) {
                 MQTTBuffer[MQTTBufferLen++] = digit;
-                //printf("MQTTReadPacket 2, First byte received %d. It %s CONNACK message\r\n", digit, ISCONNACK ? "is":"isn't");
-                //printf("MQTTReadPacket 2a, m_state=%d, len=%d\r\n", MQTTBufferMState, MQTTBufferLen);
                 MQTTBufferMState=1;
             }
 			break;
@@ -1118,24 +1152,23 @@ BOOL MQTTReadPacket(WORD *retlen) {
 		case 1:
             
             if (MQTTReadByte(&digit)) {
-                //printf("MQTTReadPacket 3. Len byte recived: %d\r\n", digit);
-                //printf("MQTTReadPacket 3a, m_state=%d, len=%d, MQTTBuffer[0]=%d\r\n", MQTTBufferMState, MQTTBufferLen, MQTTBuffer[0]);
                 MQTTBuffer[MQTTBufferLen++] = digit;
                 MQTTBufferLength += (digit & 0x7F) * MQTTBufferMultiplier;
                 MQTTBufferMultiplier *= 0x7F;
+                
+                if (digit & 0x80) {
+                    break;
+                }
+                
+                lengthLength = MQTTBufferLen-1;
+                MQTTBufferMState=3;    
             }           
-            if (digit & 0x80) {
-                //printf("MQTTReadPacket 3b. There will be another len packet\r\n");
-                break;
-            }
-			lengthLength = MQTTBufferLen-1;
-            //printf("MQTTReadPacket 4, calculating length, m_state=%d, len=%d, length=%d, multiplier=%d, lengthLength[0]=%d, skip=%d\r\n", MQTTBufferMState, MQTTBufferLen, MQTTBufferLength, MQTTBufferMultiplier, lengthLength[0], MQTTBufferSkip);
-			MQTTBufferMState=2;
             break;
-            
+  
+/*            
 		case 2:
 			if(ISPUBLISH) {
-                //printf("MQTTReadPacket 5, m_state=%d, it is PUBLISH message\r\n", MQTTBufferMState);
+                printf("MQTTReadPacket 5, m_state=%d, it is PUBLISH message\r\n", MQTTBufferMState);
 				if(TCPIsGetReady(MySocket) >= 2) {			// almeno 2 ci devono essere...
 					// Read in topic length to calculate bytes to skip over for Stream writing
 					MQTTReadByte(&digit);
@@ -1160,10 +1193,10 @@ BOOL MQTTReadPacket(WORD *retlen) {
 				MQTTBufferMState=3;
             }
 			break;
+ */ 
 
 		case 3:
 			if(TCPIsGetReady(MySocket) >= MQTTBufferLength) {
-                //printf("MQTTReadPacket 7, TCPIsGetReady() >= length, m_state=%d, len=%d, length=%d, start=%d, skip=%d\r\n", MQTTBufferMState, MQTTBufferLen, MQTTBufferLength, MQTTBufferStart, MQTTBufferSkip);
 				for(i=MQTTBufferStart; i<MQTTBufferLength; i++) {
 					if (MQTTReadByte(&digit)) {
                         if(MQTTClient.Stream) {
@@ -1181,7 +1214,6 @@ BOOL MQTTReadPacket(WORD *retlen) {
 			break;
 
 		case 4:
-            //printf("MQTTReadPacket 8, m_state=%d, len=%d, length=%d, start=%d, skip=%d\r\n", MQTTBufferMState, MQTTBufferLen, MQTTBufferLength, MQTTBufferStart, MQTTBufferSkip);
 			MQTTBufferMState=0;
 			if(!MQTTClient.Stream && MQTTBufferLen > MQTT_MAX_PACKET_SIZE) {
 				MQTTBufferLen = 0; // This will cause the packet to be ignored.
@@ -1189,15 +1221,16 @@ BOOL MQTTReadPacket(WORD *retlen) {
 
 			MQTTFlags.bits.ReceivedSuccessfully=MQTTBufferLen>0;		// boh tanto per...
 
-            //printf("MQTTReadPacket 9, returning len, m_state=%d (should be reset to 0), len=%d\r\n", MQTTBufferMState, MQTTBufferLen);
             if (retlen) {
                 *retlen = MQTTBufferLen;
+            }
+            if (retll) {
+                *retll = lengthLength;
             }
 			return TRUE;
 			break;
     }
     
-    //printf("MQTTReadPacket 10, returning len after case/switch, m_state=%d, len=%d, length=%d\r\n", MQTTBufferMState, MQTTBufferLen, MQTTBufferLength);
 	return FALSE;
 }
 
@@ -1428,7 +1461,7 @@ BOOL MQTTDisconnect(void) {
         printf("MQTTDisconnect: MQTT is IDLE\r\n");
 		if(MQTTClient.bConnected) {
 			MQTTState=MQTT_DISCONNECT;
-            printf("MQTTEndUsage: state changed to MQTT_DISCONNECT\r\n");
+            printf("MQTTDisconnect: state changed to MQTT_DISCONNECT\r\n");
 			return 1;
 			}
 		}
