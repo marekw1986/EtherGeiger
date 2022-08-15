@@ -58,7 +58,7 @@
 	#define MQTT_OPERATION_FAILED	(0x8201u)	// publish, subscribe error
 
 // MQTT_MAX_PACKET_SIZE : Maximum packet size
-#define MQTT_MAX_PACKET_SIZE 256
+#define MQTT_MAX_PACKET_SIZE 512
 
 // MQTT_KEEPALIVE : keepAlive interval in Seconds
 #define MQTT_KEEPALIVE_REALTIME 4

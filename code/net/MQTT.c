@@ -809,7 +809,7 @@ void MQTTTask(void) {
                         }
                         */
                         printf("Received message is MQTTPUBLISH\r\n");
-                        WORD topicLenIndex = 1 + ll + ((MQTTBuffer[0] & MQTTQOS1) ? 2 : 0);
+                        WORD topicLenIndex = 1 + ll;
                         printf("topicLenIndex=%d, MQTTBuffer[topicLenIndex]=%d, MQTTBuffer[topicLenIndex+1]=%d\r\n", topicLenIndex, MQTTBuffer[topicLenIndex], MQTTBuffer[topicLenIndex+1]);
                         WORD topicLen = MAKEWORD(MQTTBuffer[topicLenIndex+1], MQTTBuffer[topicLenIndex]);
                         printf("Received topic len: %d\r\n", topicLen);
@@ -817,8 +817,8 @@ void MQTTTask(void) {
                         memcpy(tmp, &MQTTBuffer[topicLenIndex+2], topicLen);
                         tmp[topicLen] = '\0';
                         printf("Received topic: %s\r\n", tmp);
-                        BYTE *payload = MQTTBuffer+topicLenIndex+2+topicLen;
-                        WORD payloadLen = len - topicLenIndex - 2 - topicLen;
+                        BYTE *payload = MQTTBuffer+topicLenIndex+2+topicLen+((MQTTBuffer[0] & MQTTQOS1) ? 2 : 0);
+                        WORD payloadLen = len - topicLenIndex - 2 - topicLen-((MQTTBuffer[0] & MQTTQOS1) ? 2 : 0);
                         memcpy(tmp, payload, payloadLen);
                         tmp[payloadLen] = '\0';
                         printf("Received payload: %s\r\n", tmp);
@@ -1154,7 +1154,7 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
             if (MQTTReadByte(&digit)) {
                 MQTTBuffer[MQTTBufferLen++] = digit;
                 MQTTBufferLength += (digit & 0x7F) * MQTTBufferMultiplier;
-                MQTTBufferMultiplier *= 0x7F;
+                MQTTBufferMultiplier *= 0x80;
                 
                 if (digit & 0x80) {
                     break;
