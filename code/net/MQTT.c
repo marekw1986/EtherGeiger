@@ -1138,7 +1138,7 @@ void MQTTPrepareBuffer(void) {
 
 BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
 	BYTE digit = 0;
-	WORD i;
+	static WORD i;
     static BYTE lengthLength;
     
 	switch(MQTTBufferMState) {
@@ -1161,7 +1161,8 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
                 }
                 
                 lengthLength = MQTTBufferLen-1;
-                MQTTBufferMState=3;    
+                MQTTBufferMState=3;
+                i = 0;
             }           
             break;
   
@@ -1196,6 +1197,7 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
  */ 
 
 		case 3:
+            /*
 			if(TCPIsGetReady(MySocket) >= MQTTBufferLength) {
 				for(i=MQTTBufferStart; i<MQTTBufferLength; i++) {
 					if (MQTTReadByte(&digit)) {
@@ -1210,6 +1212,26 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
                     }
                 }
 				MQTTBufferMState=4;
+            }
+            */
+            while(i < MQTTBufferLength) {
+                if (MQTTReadByte(&digit)) {
+                    if(MQTTClient.Stream) {
+                        if(ISPUBLISH && MQTTBufferLen-lengthLength-2>MQTTBufferSkip) {
+                        }
+                    }
+                    if(MQTTBufferLen < MQTT_MAX_PACKET_SIZE) {
+                        MQTTBuffer[MQTTBufferLen]=digit;
+                        MQTTBufferLen++;
+                    }
+                    i++;
+                }
+                else {
+                    break;
+                }
+            }
+            if (i >= MQTTBufferLength) {
+                MQTTBufferMState=4;
             }
 			break;
 
