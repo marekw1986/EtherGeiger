@@ -213,6 +213,7 @@ BOOL MQTTBeginUsage(void) {
 
 	if(MQTTFlags.bits.MQTTInUse) return FALSE;
 
+    LastPingTick = TickGet();   //Delay first ping
 	MQTTFlags.Val = 0x00;
 	MQTTFlags.bits.MQTTInUse = TRUE;
 	MQTTState = MQTT_BEGIN;
@@ -494,6 +495,7 @@ void MQTTTask(void) {
             }
 			break;
 		case MQTT_CONNECT_ACK:
+            LastPingTick = TickGet();   //Delay ping check
 			lastInActivity =TickGet(); 
             printf("ZARAZ BEDZIE CIEMNO!\r\n");
 			WORD len = 0;
@@ -760,9 +762,10 @@ void MQTTTask(void) {
 			if(MQTTConnected()) {
 				DWORD t = TickGet();
 				WORD i;
-                if((DWORD)(t-LastPingTick) > (MQTT_KEEPALIVE_LONG*TICK_SECOND)) {
+                //if((DWORD)(t-LastPingTick) > (MQTT_KEEPALIVE_LONG*TICK_SECOND)) {
 				//if((DWORD)(t-LastPingTick) > (MQTT_KEEPALIVE_REALTIME*TICK_SECOND)) {
-                //if((DWORD)(t-LastPingTick) > (MQTTClient.KeepAlive*TICK_SECOND)) {    
+                //if((DWORD)(t-LastPingTick) > (MQTTClient.KeepAlive*TICK_SECOND)) {
+                if((DWORD)(t-LastPingTick) > (60*TICK_SECOND)) {
 					if( !MQTTFlags.bits.PingOutstanding) {
                         printf("Setting state to MQTT_PING\r\n");
 						MQTTState=MQTT_PING;
