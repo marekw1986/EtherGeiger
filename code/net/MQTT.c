@@ -825,6 +825,11 @@ void MQTTTask(void) {
                         memcpy(tmp, payload, payloadLen);
                         tmp[payloadLen] = '\0';
                         printf("Received payload: %s\r\n", tmp);
+                        if (MQTTBuffer[0] & MQTTQOS1) {
+                            msgId = MAKEWORD(MQTTBuffer[topicLenIndex+2+topicLen+1], MQTTBuffer[topicLenIndex+2+topicLen]);
+                            printf("Received MsgId=%d\r\n", msgId);
+                            MQTTPubACK(msgId);
+                        }                        
                         break;
                     case MQTTPINGREQ:
                         printf("Received message is MQTTPINGREQ\r\n");
