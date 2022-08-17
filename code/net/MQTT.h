@@ -187,7 +187,6 @@ typedef struct {
 	BYTE bSecure;
 	BYTE bConnected;
 	BYTE bAvailable;
-	FILE *Stream;
 	void (*m_Callback)(const char *,const BYTE *,unsigned int);
 	
 	} MQTT_POINTERS;

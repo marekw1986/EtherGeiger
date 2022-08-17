@@ -96,11 +96,8 @@ WORD MQTTResponseCode;
 
 BYTE MQTTBuffer[MQTT_MAX_PACKET_SIZE];
 static WORD MQTTBufferIdx = 0;
-static DWORD MQTTBufferMultiplier = 1;
-static WORD MQTTBufferLength = 0;
-static BYTE MQTTBufferStart = 0;
-static WORD MQTTBufferSkip = 0;
-static BYTE MQTTBufferMState=0;
+typedef enum {RPSM_INIT, RPSM_READ_LEN, RPSM_READ_DATA, RPSM_FINALIZE} RPSM_t;
+static BYTE RPSMState = RPSM_INIT;
 
 static WORD lastInActivity=0,lastOutActivity=0;
 
@@ -1106,97 +1103,45 @@ inline BOOL MQTTReadByte(BYTE *ch) {		// ottimizzare, evitare..?
 
 void MQTTPrepareBuffer(void) {
     MQTTBufferIdx = 0;
-    MQTTBufferMultiplier = 1;
-	MQTTBufferLength = 0;
-    MQTTBufferStart = 0;
-    MQTTBufferSkip = 0;
-    MQTTBufferMState=0;
+    RPSMState=RPSM_INIT;
 }
 
 BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
 	BYTE digit = 0;
 	static WORD i;
     static BYTE lengthLength;
+    static DWORD Multiplier = 1;
+    static WORD Length = 0;
     
-	switch(MQTTBufferMState) {
-		case 0:
+	switch(RPSMState) {
+		case RPSM_INIT:
             if (MQTTReadByte(&digit)) {
                 MQTTBuffer[MQTTBufferIdx++] = digit;
-                MQTTBufferMState=1;
+                Multiplier = 1;
+                Length = 0;
+                RPSMState=RPSM_READ_LEN;
             }
 			break;
             
-		case 1:
-            
+		case RPSM_READ_LEN:  
             if (MQTTReadByte(&digit)) {
                 MQTTBuffer[MQTTBufferIdx++] = digit;
-                MQTTBufferLength += (digit & 0x7F) * MQTTBufferMultiplier;
-                MQTTBufferMultiplier *= 0x80;
+                Length += (digit & 0x7F) * Multiplier;
+                Multiplier *= 0x80;
                 
                 if (digit & 0x80) {
                     break;
                 }
                 
                 lengthLength = MQTTBufferIdx-1;
-                MQTTBufferMState=3;
+                RPSMState=RPSM_READ_DATA;
                 i = 0;
             }           
             break;
-  
-/*            
-		case 2:
-			if(ISPUBLISH) {
-                printf("MQTTReadPacket 5, m_state=%d, it is PUBLISH message\r\n", MQTTBufferMState);
-				if(TCPIsGetReady(MySocket) >= 2) {			// almeno 2 ci devono essere...
-					// Read in topic length to calculate bytes to skip over for Stream writing
-					MQTTReadByte(&digit);
-                    MQTTBuffer[MQTTBufferLen++] = digit;
-                    
-					MQTTReadByte(&digit);
-                    MQTTBuffer[MQTTBufferLen++] = digit;
 
-					MQTTBufferSkip = MAKEWORD(MQTTBuffer[MQTTBufferLen-2],MQTTBuffer[MQTTBufferLen-1]);
-                    printf("MQTTReadPacket: Analyzing ISPUBLISH. Topic length: %d\r\n", MQTTBufferSkip);
-					MQTTBufferStart=2;
-					if(MQTTBuffer[0] & MQTTQOS1) {
-						// skip message id
-						MQTTBufferSkip += 2;
-                    }
-                    printf("MQTTReadPacket: Buffer skip including MsgId (if QoS enabled): %d\r\n", MQTTBufferSkip);
-					MQTTBufferMState=3;
-                }
-            }
-			else {
-                //printf("MQTTReadPacket 6, m_state=%d, len=%d, length=%d, start=%d, skip=%d\r\n", MQTTBufferMState, MQTTBufferLen, MQTTBufferLength, MQTTBufferStart, MQTTBufferSkip);
-				MQTTBufferMState=3;
-            }
-			break;
- */ 
-
-		case 3:
-            /*
-			if(TCPIsGetReady(MySocket) >= MQTTBufferLength) {
-				for(i=MQTTBufferStart; i<MQTTBufferLength; i++) {
-					if (MQTTReadByte(&digit)) {
-                        if(MQTTClient.Stream) {
-                            if(ISPUBLISH && MQTTBufferLen-lengthLength-2>MQTTBufferSkip) {
-                            }
-                        }
-                        if(MQTTBufferLen < MQTT_MAX_PACKET_SIZE) {
-                            MQTTBuffer[MQTTBufferLen]=digit;
-                        }
-                        MQTTBufferLen++;
-                    }
-                }
-				MQTTBufferMState=4;
-            }
-            */
-            while(i < MQTTBufferLength) {
+		case RPSM_READ_DATA:
+            while(i < Length) {
                 if (MQTTReadByte(&digit)) {
-                    if(MQTTClient.Stream) {
-                        if(ISPUBLISH && MQTTBufferIdx-lengthLength-2>MQTTBufferSkip) {
-                        }
-                    }
                     if(MQTTBufferIdx < MQTT_MAX_PACKET_SIZE) {
                         MQTTBuffer[MQTTBufferIdx]=digit;
                         MQTTBufferIdx++;
@@ -1207,17 +1152,13 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
                     break;
                 }
             }
-            if (i >= MQTTBufferLength) {
-                MQTTBufferMState=4;
+            if (i >= Length) {
+                RPSMState=RPSM_FINALIZE;
             }
 			break;
 
-		case 4:
-			MQTTBufferMState=0;
-			if(!MQTTClient.Stream && MQTTBufferIdx > MQTT_MAX_PACKET_SIZE) {
-				MQTTBufferIdx = 0; // This will cause the packet to be ignored.
-            }
-
+		case RPSM_FINALIZE:
+			RPSMState=RPSM_INIT;
 			MQTTFlags.bits.ReceivedSuccessfully=MQTTBufferIdx>0;		// boh tanto per...
 
             if (retlen) {
