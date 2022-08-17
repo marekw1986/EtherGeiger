@@ -95,7 +95,7 @@ static TCP_SOCKET MySocket = INVALID_SOCKET;	// Socket currently in use by the M
 WORD MQTTResponseCode;
 
 BYTE MQTTBuffer[MQTT_MAX_PACKET_SIZE];
-static WORD MQTTBufferLen = 0;
+static WORD MQTTBufferIdx = 0;
 static DWORD MQTTBufferMultiplier = 1;
 static WORD MQTTBufferLength = 0;
 static BYTE MQTTBufferStart = 0;
@@ -780,56 +780,25 @@ void MQTTTask(void) {
                     break;
                 }
                 printf("MQTT: message received, len=%d, ll=%d\r\n", len, ll);
-                WORD msgId = 0;
-                //BYTE *payload;
-
                 lastInActivity = t;
                 BYTE type = MQTTBuffer[0] & 0xF0;
                 switch(type) {
                     case MQTTPUBLISH:
-                        /*
-                        if(MQTTClient.m_Callback) {
-                            WORD tl = MAKEWORD(MQTTBuffer[2],MQTTBuffer[1]);
-                            char *topic=malloc(tl+1);
-
-                            for(i=0; i<tl; i++) {
-                                topic[i] = MQTTBuffer[3+i];
-                            }
-                            topic[tl] = 0;
-                            // msgId only present for QOS>0
-                            if((MQTTBuffer[0] & 0x06) == MQTTQOS1) {
-                                msgId = MAKEWORD(MQTTBuffer[3+tl+1],MQTTBuffer[3+tl]);
-                                payload = MQTTBuffer+3+tl+2;
-                                MQTTClient.m_Callback(topic,payload,len-3-tl-2);
-
-                                MQTTPubACK(msgId);
-                            } 
-                            else {
-                                payload = MQTTBuffer+3+tl;
-                                MQTTClient.m_Callback(topic,payload,len-3-tl);
-                            }
-                            free(topic);
-                        }
-                        */
                         printf("Received message is MQTTPUBLISH\r\n");
-                        WORD topicLenIndex = 1 + ll;
-                        printf("topicLenIndex=%d, MQTTBuffer[topicLenIndex]=%d, MQTTBuffer[topicLenIndex+1]=%d\r\n", topicLenIndex, MQTTBuffer[topicLenIndex], MQTTBuffer[topicLenIndex+1]);
-                        WORD topicLen = MAKEWORD(MQTTBuffer[topicLenIndex+1], MQTTBuffer[topicLenIndex]);
-                        printf("Received topic len: %d\r\n", topicLen);
-                        char tmp[512];
-                        memcpy(tmp, &MQTTBuffer[topicLenIndex+2], topicLen);
-                        tmp[topicLen] = '\0';
-                        printf("Received topic: %s\r\n", tmp);
-                        BYTE *payload = MQTTBuffer+topicLenIndex+2+topicLen+((MQTTBuffer[0] & MQTTQOS1) ? 2 : 0);
-                        WORD payloadLen = len - topicLenIndex - 2 - topicLen-((MQTTBuffer[0] & MQTTQOS1) ? 2 : 0);
-                        memcpy(tmp, payload, payloadLen);
-                        tmp[payloadLen] = '\0';
-                        printf("Received payload: %s\r\n", tmp);
-                        if (MQTTBuffer[0] & MQTTQOS1) {
-                            msgId = MAKEWORD(MQTTBuffer[topicLenIndex+2+topicLen+1], MQTTBuffer[topicLenIndex+2+topicLen]);
+                        #define TOPIC_LEN_INDEX ll+1
+                        WORD topicLen = MAKEWORD(MQTTBuffer[TOPIC_LEN_INDEX+1], MQTTBuffer[TOPIC_LEN_INDEX]);
+                        BYTE *topic = MQTTBuffer+TOPIC_LEN_INDEX+2;
+                        BYTE *payload = topic+topicLen;
+                        WORD payloadLen = len-TOPIC_LEN_INDEX-4-topicLen;
+                        WORD msgId = 0;
+                        if ( (MQTTBuffer[0] & 0x06) == MQTTQOS1) {
+                            msgId = MAKEWORD(*(payload+1), *payload);
+                            payload += 2;
                             printf("Received MsgId=%d\r\n", msgId);
                             MQTTPubACK(msgId);
-                        }                        
+                        }
+                        payloadLen = (MQTTBuffer+len)-payload;
+                        MQTTCallback(topic, topicLen, payload, payloadLen);
                         break;
                     case MQTTPINGREQ:
                         printf("Received message is MQTTPINGREQ\r\n");
@@ -1136,7 +1105,7 @@ inline BOOL MQTTReadByte(BYTE *ch) {		// ottimizzare, evitare..?
 }
 
 void MQTTPrepareBuffer(void) {
-    MQTTBufferLen = 0;
+    MQTTBufferIdx = 0;
     MQTTBufferMultiplier = 1;
 	MQTTBufferLength = 0;
     MQTTBufferStart = 0;
@@ -1152,7 +1121,7 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
 	switch(MQTTBufferMState) {
 		case 0:
             if (MQTTReadByte(&digit)) {
-                MQTTBuffer[MQTTBufferLen++] = digit;
+                MQTTBuffer[MQTTBufferIdx++] = digit;
                 MQTTBufferMState=1;
             }
 			break;
@@ -1160,7 +1129,7 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
 		case 1:
             
             if (MQTTReadByte(&digit)) {
-                MQTTBuffer[MQTTBufferLen++] = digit;
+                MQTTBuffer[MQTTBufferIdx++] = digit;
                 MQTTBufferLength += (digit & 0x7F) * MQTTBufferMultiplier;
                 MQTTBufferMultiplier *= 0x80;
                 
@@ -1168,7 +1137,7 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
                     break;
                 }
                 
-                lengthLength = MQTTBufferLen-1;
+                lengthLength = MQTTBufferIdx-1;
                 MQTTBufferMState=3;
                 i = 0;
             }           
@@ -1225,12 +1194,12 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
             while(i < MQTTBufferLength) {
                 if (MQTTReadByte(&digit)) {
                     if(MQTTClient.Stream) {
-                        if(ISPUBLISH && MQTTBufferLen-lengthLength-2>MQTTBufferSkip) {
+                        if(ISPUBLISH && MQTTBufferIdx-lengthLength-2>MQTTBufferSkip) {
                         }
                     }
-                    if(MQTTBufferLen < MQTT_MAX_PACKET_SIZE) {
-                        MQTTBuffer[MQTTBufferLen]=digit;
-                        MQTTBufferLen++;
+                    if(MQTTBufferIdx < MQTT_MAX_PACKET_SIZE) {
+                        MQTTBuffer[MQTTBufferIdx]=digit;
+                        MQTTBufferIdx++;
                     }
                     i++;
                 }
@@ -1245,14 +1214,14 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
 
 		case 4:
 			MQTTBufferMState=0;
-			if(!MQTTClient.Stream && MQTTBufferLen > MQTT_MAX_PACKET_SIZE) {
-				MQTTBufferLen = 0; // This will cause the packet to be ignored.
+			if(!MQTTClient.Stream && MQTTBufferIdx > MQTT_MAX_PACKET_SIZE) {
+				MQTTBufferIdx = 0; // This will cause the packet to be ignored.
             }
 
-			MQTTFlags.bits.ReceivedSuccessfully=MQTTBufferLen>0;		// boh tanto per...
+			MQTTFlags.bits.ReceivedSuccessfully=MQTTBufferIdx>0;		// boh tanto per...
 
             if (retlen) {
-                *retlen = MQTTBufferLen;
+                *retlen = MQTTBufferIdx;
             }
             if (retll) {
                 *retll = lengthLength;
@@ -1265,31 +1234,16 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
 }
 
 
-void MQTTCallback(const char *topic, const BYTE *payload, WORD length) {
-
-	  // handle message arrived - we are only subscribing to one topic so assume all are led related
-/*
-    BYTE ledOn[] = {0x6F, 0x6E}; // hex for on
-    BYTE ledOff[] = {0x6F, 0x66, 0x66}; // hex for off
-    BYTE ledFlash[] ={0x66, 0x6C, 0x61, 0x73, 0x68}; // hex for flash
-
-    if (!memcmp(ledOn, payload, sizeof(ledOn)))
-        digitalWrite(LED, HIGH);
-
-    if (!memcmp(ledOff, payload, sizeof(ledOff)))
-        digitalWrite(LED, LOW);
-
-    if (!memcmp(ledFlash, payload, sizeof(ledFlash))) {
-        for (int flashLoop=0;flashLoop < 3; flashLoop++) {
-            digitalWrite(LED, HIGH);
-            delay(250);
-            digitalWrite(LED, LOW);
-            delay(250);
-
-        }
-    }
-		*/
-	}
+void MQTTCallback(const char *topic, const WORD topicLength, const BYTE *payload, const WORD payloadLength) {
+    char tmp[512];
+    memcpy(tmp, topic, topicLength);
+    tmp[topicLength] = '\0';
+    printf("Received topic: %s\r\n", tmp);
+    memcpy(tmp, payload, payloadLength);
+    tmp[payloadLength] = '\0';
+    printf("Received payload:\r\n%s\r\n", tmp);
+    printf("Payload len: %d\r\n", payloadLength);
+}
 
 
 /*****************************************************************************

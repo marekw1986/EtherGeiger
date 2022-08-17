@@ -218,7 +218,7 @@ BOOL MQTTPing(void);
 BOOL MQTTDisconnect(void);
 BOOL MQTTStop(void);
 
-void MQTTCallback(const char *, const BYTE *, WORD );
+void MQTTCallback(const char *topic, const WORD topicLength, const BYTE *payload, const WORD payloadLength);
 
 
 BOOL MQTTWrite(BYTE , BYTE *, WORD );
