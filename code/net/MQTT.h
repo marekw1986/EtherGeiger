@@ -244,7 +244,4 @@ BOOL MQTTConnected(void);
 	#define MQTTWriteROMString(String, Data, Len) MQTTWriteROMString(String, Data, Len)
 #endif
 
-
-char *GetAsJSONValue(char *buf,const char *n,double v);
-
 #endif
