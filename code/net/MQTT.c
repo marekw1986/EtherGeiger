@@ -76,7 +76,29 @@
 #define ISSUBACK   ((MQTTBuffer[0] & 0xF0) == MQTTSUBACK)
 #define ISPUBACK   ((MQTTBuffer[0] & 0xF0) == MQTTPUBACK)
 
+#define MQTT_TX_RING_BUFFER_SIZE 16
+#define MQTT_TX_RING_BUFFER_MASK (MQTT_TX_RING_BUFFER_SIZE-1)
+
+typedef enum {MQTT_MESSAGE_PUBLISH, MQTT_MESSAGE_SUBSCRIBE, MQTT_MESSAGE_UNSUBSCRIBE} MQTTMessageType_t;
+
+typedef struct {
+    MQTTMessageType_t type;
+    const char* topic;
+    const char* payload;
+    WORD payloadlen;
+} MQTTMessage_t;
+
+static MQTTMessage_t MQTTTxRingBuffer[MQTT_TX_RING_BUFFER_SIZE];
+static uint8_t MQTTTxRingBufferHead = 0;
+static uint8_t MQTTTxRingBufferTail = 0;
+
+void (*connect_Callback)(void) = NULL;
+void (*receive_Callback)(const char *, const WORD, const BYTE *, const WORD) = NULL;
+
+
+
 void MQTTPrepareBuffer(void);
+void MQTTPutMessageInRingBuffer(MQTTMessageType_t type, const char* topic, const char* payload, WORD payloadlen);
 /****************************************************************************
   Section:
 	MQTT Client Public Variables
@@ -151,6 +173,8 @@ static enum {
         MQTT_DISCONNECT,
         MQTT_CLOSE,
         MQTT_QUIT,
+        MQTT_RECONNECT,
+        MQTT_RECONNECT_WAIT,
         MQTT_IDLE
     } MQTTState;
 
@@ -177,6 +201,61 @@ static union {
   Section:
 	MQTT Function Implementations
   ***************************************************************************/
+    
+void MQTTSendData(const char* topic, const char* payload, WORD payloadlen) {
+    if ( (!topic) || (!payload) ) return;
+    MQTTPutMessageInRingBuffer(MQTT_MESSAGE_PUBLISH, topic, payload, payloadlen);
+}
+
+void MQTTSendStr(const char* topic, const char* payload) {
+    MQTTSendData(topic, payload, strlen(payload));
+}
+
+void MQTTSubscribe_(const char* topic) {
+    printf("Executed MQTTSubscribe_\r\n");
+    MQTTPutMessageInRingBuffer(MQTT_MESSAGE_SUBSCRIBE, topic, NULL, 0);
+}
+
+void MQTTUnscribe_(const char* topic) {
+    MQTTPutMessageInRingBuffer(MQTT_MESSAGE_UNSUBSCRIBE, topic, NULL, 0);
+}
+
+void MQTTPutMessageInRingBuffer(MQTTMessageType_t type, const char* topic, const char* payload, WORD payloadlen) {
+    MQTTMessage_t data;
+    uint8_t tmp_head;
+    
+    if (!MQTTClient.bConnected) return;
+    
+    data.type = type;
+    data.topic = topic;
+    data.payload = payload;
+    data.payloadlen = payloadlen;
+    
+    if (data.type == MQTT_MESSAGE_SUBSCRIBE) {
+        printf("MQTTPutMessage, type SUBSCRIBE, topic: %s\r\n", data.topic);
+    }
+    
+    tmp_head = ( MQTTTxRingBufferHead + 1) & MQTT_TX_RING_BUFFER_MASK;
+    if (tmp_head == MQTTTxRingBufferTail) {
+        MQTTTxRingBufferHead = MQTTTxRingBufferTail;
+    }
+    else {
+        MQTTTxRingBufferHead = tmp_head;
+        MQTTTxRingBuffer[tmp_head] = data;
+    }    
+}    
+
+void MQTTSetConnectCallback(void(*callback)(void)) {
+    if (callback) {
+        connect_Callback = callback;
+    }
+}
+
+void MQTTSetReceiveCallback(void(*callback)(const char *, const WORD, const BYTE *, const WORD)) {
+    if (callback) {
+        receive_Callback = callback;
+    }
+}
 
 /*****************************************************************************
   Function:
@@ -318,7 +397,7 @@ void MQTTTask(void) {
 			break;
 
 		case MQTT_BEGIN:
-
+            MQTTTxRingBufferHead = MQTTTxRingBufferTail;    //Clean message buffer
 			// Obtain ownership of the DNS resolution module
 			if(!DNSBeginUsage())
 				break;
@@ -335,10 +414,10 @@ void MQTTTask(void) {
 			else {
 				MQTTState=MQTT_HOME;		// can't do anything
 				break;
-				}
+            }
 			
 			Timer = TickGet();
-			MQTTState++;
+			MQTTState = MQTT_NAME_RESOLVE;
 			break;
 
 		case MQTT_NAME_RESOLVE:
@@ -347,7 +426,7 @@ void MQTTTask(void) {
 				// Timeout after 6 seconds of unsuccessful DNS resolution
 				if(TickGet() - Timer > 6*TICK_SECOND)	{
 					MQTTResponseCode = MQTT_RESOLVE_ERROR;
-					MQTTState = MQTT_HOME;
+					MQTTState = MQTT_RECONNECT;  //was MQTT_HOME
 					DNSEndUsage();
                 }
 				break;
@@ -358,11 +437,11 @@ void MQTTTask(void) {
 				// An invalid IP address was returned from the DNS 
 				// server.  Quit and fail permanantly if host is not valid.
 				MQTTResponseCode = MQTT_RESOLVE_ERROR;
-				MQTTState = MQTT_HOME;
+				MQTTState = MQTT_RECONNECT;  //was MQTT_HOME
 				break;
             }
 
-			MQTTState++;
+			MQTTState = MQTT_OBTAIN_SOCKET;
 			// No need to break here
 
 		case MQTT_OBTAIN_SOCKET:
@@ -376,7 +455,7 @@ void MQTTTask(void) {
 				break;
             }
 
-			MQTTState++;
+			MQTTState = MQTT_SOCKET_OBTAINED;
 			Timer = TickGet();
 			// No break; fall into MQTT_SOCKET_OBTAINED
 			
@@ -394,7 +473,8 @@ void MQTTTask(void) {
 				break;
             }
 			MQTTFlags.bits.ConnectedOnce = TRUE;
-
+            MQTTState = MQTT_CONNECT;
+            break;
 
 		case MQTT_CONNECT:
 			if(!MQTTConnected()) {
@@ -530,6 +610,10 @@ void MQTTTask(void) {
                 }
                 MQTTPrepareBuffer();
                 MQTTState=MQTT_IDLE;    //go to idle now
+                TCPWasReset(MySocket);  //This is needed to prevent false reset later
+                if (connect_Callback) {
+                    connect_Callback();
+                }
             }
 			break;
 
@@ -580,7 +664,8 @@ void MQTTTask(void) {
 				//if(MQTTWrite(header,MQTTBuffer,length-5))		// si potrebbe spezzare in 2 per non rifare tutto il "prepare" qua sopra...
 				MQTTWrite(header,MQTTBuffer,length-5);
                 MQTTPrepareBuffer();
-                MQTTState=MQTT_PUBLISH_ACK;
+                MQTTState=MQTT_IDLE;
+                printf("MQTT_PUBLISH -> MQTT_IDLE\r\n");
 				MQTTResponseCode=MQTT_SUCCESS;
 
             }
@@ -691,7 +776,7 @@ void MQTTTask(void) {
 #endif
 					length = MQTTWriteString(MQTTClient.Topic.szRAM, MQTTBuffer,length);
 				if(MQTTWrite(MQTTUNSUBSCRIBE | MQTTQOS1,MQTTBuffer,length-5)) {
-					MQTTState++;
+					MQTTState = MQTT_UNSUBSCRIBE_ACK;
                 }
 				MQTTResponseCode=MQTT_SUCCESS;
             }
@@ -706,7 +791,7 @@ void MQTTTask(void) {
 			break;
 
 		case MQTT_DISCONNECT_INIT:
-			MQTTState++;
+			MQTTState = MQTT_DISCONNECT;
 			break;
 
 		case MQTT_DISCONNECT:	 
@@ -734,12 +819,30 @@ void MQTTTask(void) {
 			if(MySocket != INVALID_SOCKET) {
 				TCPClose(MySocket);
             }
-			MQTTState = MQTT_HOME;
+			MQTTState = MQTT_RECONNECT;  //MQTT_HOME
             MQTTFlags.bits.MQTTInUse = FALSE;
             MQTTClient.bConnected = FALSE;
 			break;
+        
+        case MQTT_RECONNECT:
+            MQTTState = MQTT_RECONNECT_WAIT;
+            Timer = TickGet();
+            break;
+            
+        case MQTT_RECONNECT_WAIT:
+            if((DWORD)(TickGet()-Timer) > (5*TICK_SECOND)) {
+                MQTTState = MQTT_BEGIN;
+                printf("MQTT Reconnecting\r\n");
+            }
+            break;
             
 		case MQTT_IDLE:	
+            if(TCPWasReset(MySocket)) {
+                printf("MQTT TCP disconnected, reseting\r\n");
+                MQTTState = MQTT_CLOSE;
+                break;
+            }
+            
 			if(MQTTConnected()) {
 				DWORD t = TickGet();
 				WORD i;
@@ -758,6 +861,34 @@ void MQTTTask(void) {
                         }
                     }
                     LastPingTick = TickGet();
+                    break;  //To send ping right away
+                }
+                
+                if( !MQTTFlags.bits.PingOutstanding ) { //TODO
+                    if (MQTTTxRingBufferHead != MQTTTxRingBufferTail) {
+                        MQTTTxRingBufferTail = (MQTTTxRingBufferTail + 1) & MQTT_TX_RING_BUFFER_MASK;
+                        MQTTMessage_t data = MQTTTxRingBuffer[MQTTTxRingBufferTail];
+                        if (data.type == MQTT_MESSAGE_PUBLISH) {
+                            MQTTClient.Topic.szRAM = (char*)data.topic;
+                            MQTTClient.Payload.szRAM = (char*)data.payload;
+                            MQTTClient.Plength = data.payloadlen;
+                            MQTTClient.Retained = 0;
+                            MQTTState = MQTT_PUBLISH;
+                            printf("Publishing\r\n");
+                            break;   //To send right away
+                        }
+                        else if (data.type == MQTT_MESSAGE_SUBSCRIBE) {
+                            MQTTClient.Topic.szRAM = (char*)data.topic;
+                            printf("Subscribing\r\n");
+                            MQTTState = MQTT_SUBSCRIBE;
+                            break;
+                        }
+                        else if (data.type == MQTT_MESSAGE_UNSUBSCRIBE) {
+                            MQTTClient.Topic.szRAM = (char*)data.topic;
+                            MQTTState = MQTT_UNSUBSCRIBE;
+                            break;
+                        }
+                    }
                 }
                 
                 WORD len = 0;
@@ -783,7 +914,9 @@ void MQTTTask(void) {
                             MQTTPubACK(msgId);
                         }
                         payloadLen = (MQTTBuffer+len)-payload;
-                        MQTTCallback(topic, topicLen, payload, payloadLen);
+                        if(receive_Callback) {
+                            receive_Callback(topic, topicLen, payload, payloadLen);
+                        }
                         break;
                     case MQTTPINGREQ:
                         //printf("Received message is MQTTPINGREQ\r\n");
@@ -792,6 +925,9 @@ void MQTTTask(void) {
                     case MQTTPINGRESP:
                         //printf("Received message is MQTTPINGRESP\r\n");
                         MQTTFlags.bits.PingOutstanding = FALSE;
+                        break;
+                    case MQTTPUBACK:
+                        printf("Received message is MQTTPUBACK\r\n");
                         break;
                     default:
                         //printf("Received message is different: %d\r\n", MQTTBuffer[0]);
@@ -1160,18 +1296,6 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
     }
     
 	return FALSE;
-}
-
-
-void MQTTCallback(const char *topic, const WORD topicLength, const BYTE *payload, const WORD payloadLength) {
-    char tmp[512];
-    memcpy(tmp, topic, topicLength);
-    tmp[topicLength] = '\0';
-    printf("Received topic: %s\r\n", tmp);
-    memcpy(tmp, payload, payloadLength);
-    tmp[payloadLength] = '\0';
-    printf("Received payload:\r\n%s\r\n", tmp);
-    printf("Payload len: %d\r\n", payloadLength);
 }
 
 

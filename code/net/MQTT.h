@@ -187,7 +187,6 @@ typedef struct {
 	BYTE bSecure;
 	BYTE bConnected;
 	BYTE bAvailable;
-	void (*m_Callback)(const char *,const BYTE *,unsigned int);
 	
 	} MQTT_POINTERS;
 
@@ -217,7 +216,11 @@ BOOL MQTTPing(void);
 BOOL MQTTDisconnect(void);
 BOOL MQTTStop(void);
 
-void MQTTCallback(const char *topic, const WORD topicLength, const BYTE *payload, const WORD payloadLength);
+void MQTTSendData(const char* topic, const char* payload, WORD payloadlen);
+void MQTTSendStr(const char* topic, const char* payload);
+void MQTTSubscribe_(const char* topic);
+void MQTTSetConnectCallback(void(*callback)(void));
+void MQTTSetReceiveCallback(void(*callback)(const char *, const WORD, const BYTE *, const WORD));
 
 
 BOOL MQTTWrite(BYTE , BYTE *, WORD );

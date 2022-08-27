@@ -59,8 +59,11 @@ FATFS USBFatFS;
 extern void GenericTCPServer(void);
 static void handle_usb_log (void);
 static void handle_bme_read (void);
-void handle_mqtt(void);
+//void handle_mqtt(void);
 char* constructJSON (char* buf, uint16_t len);
+void mqtt_init (void);
+void handle_mqtt_log(void);
+void mqtt_on_connect(void);
 
 int main(int argc, char** argv) {
     
@@ -122,6 +125,9 @@ int main(int argc, char** argv) {
     i2c_send_byte(0xFF, PCF8574_IO_ADDR);
     init_ui();
     
+    MQTTSetConnectCallback(mqtt_on_connect);
+    mqtt_init();
+    
     while (1) {
         
         StackTask();
@@ -147,7 +153,7 @@ int main(int argc, char** argv) {
         handle_ui();
         lcd_handle();
         handle_usb_log();
-        handle_mqtt();
+        handle_mqtt_log();
     }
 
     return (EXIT_SUCCESS);
@@ -239,163 +245,35 @@ void handle_usb_log (void) {
     }   
 }
 
-void handle_mqtt(void) {
+void mqtt_init (void) {
+    if(MQTTBeginUsage()) {
+        printf("Starting MQTT\r\n");
+        MQTTClient.Server.szRAM = config.mqtt_server;	// MQTT server address
+        MQTTClient.ServerPort = 1883;
+        MQTTClient.ConnectId.szRAM = "d:atlantis:ethergeiger:1";
+        MQTTClient.Topic.szRAM = config.mqtt_topic;
+        MQTTClient.Username.szRAM = config.mqtt_username;
+        MQTTClient.Password.szRAM = config.mqtt_password;                
+        MQTTClient.bSecure=FALSE;
+        MQTTClient.QOS=1;
+        MQTTClient.KeepAlive=MQTT_KEEPALIVE_LONG;   
+    }
+}
+
+void mqtt_on_connect(void) {
+    printf("MQTT connected\r\n");
+}
+
+void handle_mqtt_log(void) {
+    static uint32_t timer = 0;
+    static char JSONBuffer[512];
     
-#define REQ_TIMEOUT_MS  2000
-#define MQTT_POST_DELAY_MS 30000
-    
-    //static char server[] = "192.168.1.105";
-    //static char username[] = "use-token-auth";
-    //static char password[] = "secretpassword";    
-    static char connectid[] = "d:atlantis:ethergeiger:1";
-    static char server[64];
-    static char topic[64];
-    static char username[64];
-    static char password[64];
-    static uint16_t port;
-    static uint32_t RequestTimeoutTimer = 0;
-    
-	static enum	{
-		MQTT_CLIENT_HOME = 0,
-		MQTT_CLIENT_BEGIN,
-		MQTT_CLIENT_CONNECT,
-		MQTT_CLIENT_CONNECT_WAIT,
-		//MQTT_CLIENT_SUBSCRIBE,
-		//MQTT_CLIENT_SUBSCRIBE_WAIT,
-        MQTT_CLIENT_PUBLISH,
-		MQTT_CLIENT_PUBLISH_WAIT,
-		MQTT_CLIENT_FINISHING,
-		MQTT_CLIENT_DONE,
-        //MQTT_CLIENT_IDLE
-	} MQTTClientState = MQTT_CLIENT_HOME;
-    
-	static DWORD WaitTime;
-	static char JSONbuffer[512];
-    static uint32_t mqtt_timer = 0;
-       
-	switch(MQTTClientState)	{
-		case MQTT_CLIENT_HOME:
-        if( ((uint32_t)(millis()-mqtt_timer) > MQTT_POST_DELAY_MS) && (uptime() > 60) ) {
-            //If mqtt_server not set, client diabled
-            if ( strlen(config.mqtt_server) == 0)  break;
-            // Start sending to MQTT server
-            strncpy(server, config.mqtt_server, sizeof(server)-1);
-            strncpy(topic, config.mqtt_topic, sizeof(topic)-1);
-            strncpy(username, config.mqtt_username, sizeof(username)-1);
-            strncpy(password, config.mqtt_password, sizeof(password)-1);
-            port = config.mqtt_port;
-            mqtt_timer = millis();
-            RequestTimeoutTimer = millis();
-            MQTTClientState=MQTT_CLIENT_BEGIN;
-		}
-		break;
-
-		case MQTT_CLIENT_BEGIN:
-        if(MQTTBeginUsage()) {
-            // Note that these strings must stay allocated in 
-            // memory until MQTTIsBusy() returns FALSE.  To 
-            // guarantee that the C compiler does not reuse this 
-            // memory, you must allocate the strings as static.
-            MQTTClient.Server.szRAM = server;	// MQTT server address
-            MQTTClient.ServerPort = port;
-            MQTTClient.ConnectId.szRAM = connectid;
-            if (strlen(username) == 0) {
-                MQTTClient.Username.szRAM = NULL;
-                MQTTClient.Password.szRAM = NULL;
-            }
-            else {
-                MQTTClient.Username.szRAM = username;
-                MQTTClient.Password.szRAM = password;                
-            }
-            MQTTClient.bSecure=FALSE;
-            //  MQTTClient.m_Callback = callback;
-            MQTTClient.QOS=1;
-            MQTTClient.KeepAlive=MQTT_KEEPALIVE_LONG;
-            //  MQTTClient.Stream = stream;
-            MQTTClientState=MQTT_CLIENT_CONNECT;
-        }
-        else {
-            if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) MQTTClientState = MQTT_CLIENT_DONE;
-        }
-		break;
-
-		case MQTT_CLIENT_CONNECT:
-        MQTTConnect(MQTTClient.ConnectId.szRAM,MQTTClient.Username.szRAM,MQTTClient.Password.szRAM, NULL,0,0,NULL);
-        MQTTClientState=MQTT_CLIENT_CONNECT_WAIT;
-		break;
-
-		case MQTT_CLIENT_CONNECT_WAIT:
-        if(MQTTConnected()) {
-            MQTTClientState=MQTT_CLIENT_PUBLISH;
-        }
-        else {
-            if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) MQTTClientState = MQTT_CLIENT_DONE;
-        }
-		break;
-        
-        /*
-		case MQTT_CLIENT_SUBSCRIBE:
-        MQTTSubscribe(topic, 1);
-        MQTTClientState++;
-		break;
-
-		case MQTT_CLIENT_SUBSCRIBE_WAIT:
-        if (!MQTTIsBusy())	{
-            MQTTClientState = MQTT_CLIENT_IDLE;
-        }
-        else {
-            if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) {
-                MQTTClientState = MQTT_CLIENT_DONE;
-            }
-        }
-		break; 
-        */       
-
-		case MQTT_CLIENT_PUBLISH:
-        MQTTClient.Topic.szRAM = topic;
-        constructJSON(JSONbuffer, sizeof(JSONbuffer)-2);
-        MQTTClient.Payload.szRAM = JSONbuffer;
-        MQTTPublish(MQTTClient.Topic.szRAM,MQTTClient.Payload.szRAM,strlen(MQTTClient.Payload.szRAM),0);		// così... ROM?
-        MQTTClientState=MQTT_CLIENT_PUBLISH_WAIT;
-		break;
-
-		case MQTT_CLIENT_PUBLISH_WAIT:
-        if(MQTTIsIdle()) {
-            if(MQTTResponseCode == MQTT_SUCCESS) {
-                MQTTClientState=MQTT_CLIENT_FINISHING;
-                printf("MQTT PUBLISH ACK\r\n");
-                mqtt_last_publish = uptime();
-            }
-            else {
-                MQTTClientState=MQTT_CLIENT_FINISHING;
-                printf("MQTT PUBLISH ACK\r\n");
-            }
-        }
-        else {
-            if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) {
-                MQTTClientState = MQTT_CLIENT_DONE;
-                printf("MQTT PUBLISH timeout\r\n");
-            }
-        }
-		break;
-
-		case MQTT_CLIENT_FINISHING:
-        if (!MQTTIsBusy())	{
-            MQTTClientState = MQTT_CLIENT_DONE;
-        }
-        else {
-            if ((uint32_t)(millis() - RequestTimeoutTimer) > REQ_TIMEOUT_MS) {
-                MQTTClientState = MQTT_CLIENT_DONE;
-            }
-        }
-		break;
-
-		case MQTT_CLIENT_DONE:
-            MQTTEndUsage();
-            MQTTClientState = MQTT_CLIENT_HOME;
-            mqtt_timer = millis();
-		break;
-	}
+    if ( ((uint32_t)(uptime()-timer) >= 30) && (uptime() > 60) ) {
+        constructJSON(JSONBuffer, sizeof(JSONBuffer)-2);
+        MQTTSendStr(config.mqtt_topic, JSONBuffer);
+        timer = uptime();
+        mqtt_last_publish = timer;  //TODO
+    }
 }
 
 
