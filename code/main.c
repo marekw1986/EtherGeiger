@@ -64,6 +64,9 @@ char* constructJSON (char* buf, uint16_t len);
 void mqtt_init (void);
 void handle_mqtt_log(void);
 void mqtt_on_connect(void);
+void mqtt_on_publish(void);
+void mqtt_on_subscribe(void);
+void mqtt_on_receive(const char *topic, const WORD topicLength, const BYTE *payload, const WORD payloadLength);
 
 int main(int argc, char** argv) {
     
@@ -126,6 +129,7 @@ int main(int argc, char** argv) {
     init_ui();
     
     MQTTSetConnectCallback(mqtt_on_connect);
+    MQTTSetReceiveCallback(mqtt_on_receive);
     mqtt_init();
     
     while (1) {
@@ -262,6 +266,28 @@ void mqtt_init (void) {
 
 void mqtt_on_connect(void) {
     printf("MQTT connected\r\n");
+    MQTTSubscribe_("testTopic", mqtt_on_subscribe);
+    //MQTTSendStr("testTopic", "Hellord!", NULL);
+}
+
+void mqtt_on_publish(void) {
+    printf("MQTT published\r\n");
+    mqtt_last_publish = uptime();  //TODO
+}
+
+void mqtt_on_subscribe(void) {
+    printf("MQTT subscribed\r\n");
+}
+
+void mqtt_on_receive(const char *topic, const WORD topicLength, const BYTE *payload, const WORD payloadLength) {
+    char tmp[512];
+    memcpy(tmp, topic, topicLength);
+    tmp[topicLength] = '\0';
+    printf("Received topic: %s\r\n", tmp);
+    memcpy(tmp, payload, payloadLength);
+    tmp[payloadLength] = '\0';
+    printf("Received payload:\r\n%s\r\n", tmp);
+    printf("Payload len: %d\r\n", payloadLength);
 }
 
 void handle_mqtt_log(void) {
@@ -270,9 +296,11 @@ void handle_mqtt_log(void) {
     
     if ( ((uint32_t)(uptime()-timer) >= 30) && (uptime() > 60) ) {
         constructJSON(JSONBuffer, sizeof(JSONBuffer)-2);
-        MQTTSendStr(config.mqtt_topic, JSONBuffer);
+        MQTTSendStr(config.mqtt_topic, JSONBuffer, mqtt_on_publish);
+        MQTTSendStr(config.mqtt_topic, "Druga wiadomosc", mqtt_on_publish);
+        MQTTSendStr(config.mqtt_topic, "Trzecia wiadomosc", mqtt_on_publish);
+        printf("Publishing\r\n");
         timer = uptime();
-        mqtt_last_publish = timer;  //TODO
     }
 }
 

@@ -182,6 +182,7 @@ typedef struct {
 	BYTE Ver;
 	WORD ServerPort;
 	WORD MsgId;
+    WORD OutMsgId;
 	WORD KeepAlive;
 	BYTE QOS;
 	BYTE bSecure;
@@ -216,9 +217,9 @@ BOOL MQTTPing(void);
 BOOL MQTTDisconnect(void);
 BOOL MQTTStop(void);
 
-void MQTTSendData(const char* topic, const char* payload, WORD payloadlen);
-void MQTTSendStr(const char* topic, const char* payload);
-void MQTTSubscribe_(const char* topic);
+void MQTTSendData(const char* topic, const char* payload, WORD payloadlen, void(*cb)(void));
+void MQTTSendStr(const char* topic, const char* payload, void(*cb)(void));
+void MQTTSubscribe_(const char* topic, void(*cd)(void));
 void MQTTSetConnectCallback(void(*callback)(void));
 void MQTTSetReceiveCallback(void(*callback)(const char *, const WORD, const BYTE *, const WORD));
 

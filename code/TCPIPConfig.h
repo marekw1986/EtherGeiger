@@ -292,7 +292,7 @@
             {TCP_PURPOSE_HTTP_SERVER, TCP_PIC_RAM, 512, 512},
             {TCP_PURPOSE_HTTP_SERVER, TCP_PIC_RAM, 512, 512},
             {TCP_PURPOSE_HTTP_SERVER, TCP_PIC_RAM, 512, 512},
-			{TCP_PURPOSE_DEFAULT, TCP_PIC_RAM, 2048, 256},
+			{TCP_PURPOSE_DEFAULT, TCP_PIC_RAM, 512, 512},
 			//{TCP_PURPOSE_BERKELEY_SERVER, TCP_ETH_RAM, 25, 20},
 			//{TCP_PURPOSE_BERKELEY_SERVER, TCP_ETH_RAM, 25, 20},
 			//{TCP_PURPOSE_BERKELEY_SERVER, TCP_ETH_RAM, 25, 20},
@@ -305,7 +305,7 @@
  *   Define the maximum number of available UDP Sockets, and whether
  *   or not to include a checksum on packets being transmitted.
  */
-#define MAX_UDP_SOCKETS     (3u)
+#define MAX_UDP_SOCKETS     (5u)
 #define UDP_USE_TX_CHECKSUM		// This slows UDP TX performance by nearly 50%, except when using the ENCX24J600 or PIC32MX6XX/7XX, which have a super fast DMA and incurs virtually no speed pentalty.
 
 
