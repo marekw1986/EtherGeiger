@@ -299,7 +299,6 @@ void handle_mqtt_log(void) {
         MQTTSendStr(config.mqtt_topic, JSONBuffer, mqtt_on_publish);
         MQTTSendStr(config.mqtt_topic, "Druga wiadomosc", mqtt_on_publish);
         MQTTSendStr(config.mqtt_topic, "Trzecia wiadomosc", mqtt_on_publish);
-        printf("Publishing\r\n");
         timer = uptime();
     }
 }

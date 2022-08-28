@@ -128,6 +128,8 @@ static BYTE RPSMState = RPSM_INIT;
 static WORD lastInActivity=0,lastOutActivity=0;
 
 static DWORD LastPingTick = 0;
+static DWORD AckTimer = 0;
+static DWORD PingTimer = 0;
 
 // Message state machine for the MQTT Client
 static enum {
@@ -167,12 +169,9 @@ static enum {
         MQTT_PING,
         MQTT_PING_ACK,
         MQTT_PUBLISH,
-        MQTT_PUBLISH_ACK,
         MQTT_SUBSCRIBE,
-        MQTT_SUBSCRIBE_ACK,
         MQTT_PUBACK,
         MQTT_UNSUBSCRIBE,
-        MQTT_UNSUBSCRIBE_ACK,
         MQTT_DISCONNECT_INIT,
         MQTT_DISCONNECT,
         MQTT_CLOSE,
@@ -290,7 +289,7 @@ BOOL MQTTBeginUsage(void) {
 
 	if(MQTTFlags.bits.MQTTInUse) return FALSE;
 
-    LastPingTick = TickGet();   //Delay first ping
+    PingTimer = TickGet();   //Delay first ping
 	MQTTFlags.Val = 0x0000;
 	MQTTFlags.bits.MQTTInUse = TRUE;
 	MQTTState = MQTT_BEGIN;
@@ -570,7 +569,7 @@ void MQTTTask(void) {
             }
 			break;
 		case MQTT_CONNECT_ACK:
-            LastPingTick = TickGet();   //Delay ping check
+            PingTimer = TickGet();   //Delay ping check
 			lastInActivity =TickGet(); 
 			WORD len = 0;
             if(!MQTTReadPacket(&len, NULL)) {
@@ -629,6 +628,10 @@ void MQTTTask(void) {
                 //MQTTPrepareBuffer();
 				MQTTState=MQTT_IDLE;			//
             }
+            else {
+                //printf("Not able to send PING. Closing\r\n");
+                MQTTState = MQTT_CLOSE;
+            }
 			break;
 
 		case MQTT_PING_ACK:					// Pingback, 
@@ -671,7 +674,7 @@ void MQTTTask(void) {
                 }
                 MQTTPrepareBuffer();
                 MQTTState=MQTT_IDLE;
-                printf("MQTT_PUBLISH -> MQTT_IDLE\r\n");
+                //printf("MQTT_PUBLISH -> MQTT_IDLE\r\n");
 				MQTTResponseCode=MQTT_SUCCESS;
 
             }
@@ -679,25 +682,6 @@ void MQTTTask(void) {
 				MQTTResponseCode=MQTT_OPERATION_FAILED;
                 MQTTState = MQTT_CLOSE;
             }
-			break;
-
-		case MQTT_PUBLISH_ACK:				// Publish command accepted (if QOS)
-			if(MQTTClient.QOS>0) {			// FINIRE...
-				//BYTE llen;
-                WORD len=0;
-                if(!MQTTReadPacket(&len, NULL)) {
-                    break;
-                }
-
-                if( (len >= 2) && ISPUBACK) {		// TODO: Check MsgId
-                    MQTTPrepareBuffer();
-                    MQTTState=MQTT_IDLE;
-                }
-            }
-			else {
-                MQTTPrepareBuffer();
-				MQTTState=MQTT_IDLE;
-            }                
 			break;
 
 		case MQTT_SUBSCRIBE:	
@@ -726,37 +710,16 @@ void MQTTTask(void) {
 				MQTTBuffer[length++] = MQTTClient.QOS;
 
 				if(MQTTWrite(MQTTSUBSCRIBE | (MQTTClient.QOS ? (MQTTClient.QOS==2 ? MQTTQOS2 : MQTTQOS1) : MQTTQOS0),MQTTBuffer,length-5)) {		// si potrebbe spezzare in 2 per non rifare tutto il "prepare" qua sopra...
-					MQTTState=MQTT_SUBSCRIBE_ACK;
+					if (!MQTTClient.QOS) {  //QoS disabled, so execute callback here
+                        if (subscribe_Callback) { subscribe_Callback(); }
+                    }
+                    MQTTState=MQTT_IDLE;   //was MQTT_SUBSCRIBE_ACK
                     MQTTPrepareBuffer();
                 }
 				MQTTResponseCode=MQTT_SUCCESS;
             }
 			else {
 				MQTTResponseCode=MQTT_OPERATION_FAILED;
-            }
-			break;
-
-		case MQTT_SUBSCRIBE_ACK:			// Subscribe command accepted (if QOS)
-			if(MQTTClient.QOS>0) {			// FINIRE...
-				WORD len=0;
-                if(!MQTTReadPacket(&len, NULL)) {
-                    break;
-                }
-   
-				if( (len>=3) && ISSUBACK) {
-                    MQTTPrepareBuffer();
-					MQTTState=MQTT_IDLE;
-                    if (subscribe_Callback) {
-                        subscribe_Callback();
-                    }
-                }
-            }
-			else {
-                MQTTPrepareBuffer();
-				MQTTState=MQTT_IDLE;
-                if (subscribe_Callback) {
-                    subscribe_Callback();
-                }
             }
 			break;
 
@@ -789,21 +752,14 @@ void MQTTTask(void) {
 #endif
 					length = MQTTWriteString(MQTTClient.Topic.szRAM, MQTTBuffer,length);
 				if(MQTTWrite(MQTTUNSUBSCRIBE | MQTTQOS1,MQTTBuffer,length-5)) {
-					MQTTState = MQTT_UNSUBSCRIBE_ACK;
+					MQTTState = MQTT_IDLE;   //was MQTT_UNSUBSCRIBE_ACK
+                    MQTTPrepareBuffer();
                 }
 				MQTTResponseCode=MQTT_SUCCESS;
             }
 			else {
 				MQTTResponseCode=MQTT_OPERATION_FAILED;
             }
-			break;
-
-		case MQTT_UNSUBSCRIBE_ACK:			// Subscribe command accepted (if QOS)
-            if (unsubscribe_Callback) {
-                unsubscribe_Callback();
-            }
-            MQTTPrepareBuffer();
-			MQTTState=MQTT_IDLE;
 			break;
 
 		case MQTT_DISCONNECT_INIT:
@@ -860,24 +816,29 @@ void MQTTTask(void) {
             }
             
 			if(MQTTConnected()) {
-				DWORD t = TickGet();
-				WORD i;
-                //if((DWORD)(t-LastPingTick) > (MQTT_KEEPALIVE_LONG*TICK_SECOND)) {
-				//if((DWORD)(t-LastPingTick) > (MQTT_KEEPALIVE_REALTIME*TICK_SECOND)) {
-                //if((DWORD)(t-LastPingTick) > (MQTTClient.KeepAlive*TICK_SECOND)) {
-                if((DWORD)(t-LastPingTick) > (60*TICK_SECOND)) {
-					if( !MQTTFlags.bits.PingOutstanding) {
-						MQTTState=MQTT_PING;
-						MQTTFlags.bits.PingOutstanding = TRUE;
+                if (MQTTFlags.bits.PingOutstanding) {
+                    if ( (DWORD)(TickGet()-PingTimer) > (5*TICK_SECOND) ) {
+                        MQTTState = MQTT_CLOSE;
+                        MQTTFlags.bits.PingOutstanding = FALSE;
+                        printf("No ping response in 5 seconds. Closing connection.\r\n");
+                        PingTimer = TickGet();
+                        break;
                     }
-                    else {
-                        if (MQTTEndUsage() == MQTT_SUCCESS) {
-                            MQTTFlags.bits.PingOutstanding = FALSE;
-                            printf("No ping response. Closing connection.\r\n");
-                        }
+                }
+                else {
+                    if( (DWORD)(TickGet()-PingTimer) > (60*TICK_SECOND) ) {
+                        printf("Sending PING!\r\n");
+                        MQTTState=MQTT_PING;
+                        MQTTFlags.bits.PingOutstanding = TRUE;
+                        PingTimer = TickGet();
+                        break;
                     }
-                    LastPingTick = TickGet();
-                    break;  //To send ping right away
+                }
+                
+                if ( MQTTFlags.bits.WaitingAck && ((DWORD)(TickGet()-AckTimer) > (5*TICK_SECOND)) ) {
+                    MQTTFlags.bits.WaitingAck = FALSE;
+                    MQTTState = MQTT_CLOSE;
+                    break;
                 }
                 
                 if( !MQTTFlags.bits.PingOutstanding && !MQTTFlags.bits.WaitingAck ) { //TODO
@@ -894,9 +855,10 @@ void MQTTTask(void) {
                             }
                             if (MQTTClient.QOS) {
                                 MQTTFlags.bits.WaitingAck = TRUE;
+                                AckTimer = TickGet();
                             }
                             MQTTState = MQTT_PUBLISH;
-                            printf("Publishing\r\n");
+                            //printf("Publishing\r\n");
                             break;   //To send right away
                         }
                         else if (data.type == MQTT_MESSAGE_SUBSCRIBE) {
@@ -924,7 +886,7 @@ void MQTTTask(void) {
                 if(!MQTTReadPacket(&len, &ll)) {
                     break;
                 }
-                lastInActivity = t;
+                lastInActivity = TickGet();
                 BYTE type = MQTTBuffer[0] & 0xF0;
                 switch(type) {
                     case MQTTPUBLISH: ;
@@ -951,15 +913,28 @@ void MQTTTask(void) {
                         MQTTState=MQTT_PING_ACK;
                         break;
                     case MQTTPINGRESP:
-                        //printf("Received message is MQTTPINGRESP\r\n");
+                        printf("Received message is MQTTPINGRESP\r\n");
                         MQTTFlags.bits.PingOutstanding = FALSE;
+                        PingTimer = TickGet();
                         break;
                     case MQTTPUBACK:
-                        printf("Received message is MQTTPUBACK\r\n");
+                        //printf("Received message is MQTTPUBACK\r\n");
                         MQTTFlags.bits.WaitingAck = FALSE;
                         if (MQTTClient.QOS) {   //QoS active, so we execute callback after receiving ACK
                             if(publish_Callback) { publish_Callback(); }
                         }
+                        break;
+                    case MQTTSUBACK:
+                        printf("Received message is MQTTSUBACK\r\n");
+                        MQTTFlags.bits.WaitingAck = FALSE;
+                        if (MQTTClient.QOS) {
+                            if (subscribe_Callback) { subscribe_Callback(); }   //QoS active, so we execute callback after receiving ACK
+                        }
+                        break;
+                    case MQTTUNSUBACK:
+                        printf("Received message is MQTTUNSUBACK\r\n");
+                        MQTTFlags.bits.WaitingAck = FALSE;
+                        if (unsubscribe_Callback) { unsubscribe_Callback(); }
                         break;
                     default:
                         //printf("Received message is different: %d\r\n", MQTTBuffer[0]);

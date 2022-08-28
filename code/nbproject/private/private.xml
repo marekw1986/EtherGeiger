@@ -5,6 +5,7 @@
         <group>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/net/MQTT.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/main.c</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/TCPIPConfig.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/common.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/net/MQTT.c</file>
         </group>
