@@ -100,9 +100,15 @@ void (*receive_Callback)(const char *, const WORD, const BYTE *, const WORD) = N
 void (*publish_Callback)(void) = NULL;
 
 
+static BOOL MQTTReadPacket(WORD *retlen, BYTE *retll);  //BYTE *
+static void MQTTPrepareBuffer(void);
+static void MQTTPutMessageInRingBuffer(MQTTMessageType_t type, const char* topic, const char* payload, WORD payloadlen, void(*cb)(void));
+static BOOL MQTTWrite(BYTE , BYTE *, WORD );
+static WORD MQTTWriteString(const char *, BYTE *, WORD );
+static BOOL MQTTReadByte(BYTE *ch);
+static BOOL MQTTPing(void);
+static BOOL MQTTPubACK(WORD);
 
-void MQTTPrepareBuffer(void);
-void MQTTPutMessageInRingBuffer(MQTTMessageType_t type, const char* topic, const char* payload, WORD payloadlen, void(*cb)(void));
 /****************************************************************************
   Section:
 	MQTT Client Public Variables
@@ -215,7 +221,7 @@ void MQTTSendStr(const char* topic, const char* payload, void(*cb)(void)) {
     MQTTSendData(topic, payload, strlen(payload), cb);
 }
 
-void MQTTSubscribe_(const char* topic, void(*cb)(void)) {
+void MQTTSubscribe(const char* topic, void(*cb)(void)) {
     MQTTPutMessageInRingBuffer(MQTT_MESSAGE_SUBSCRIBE, topic, NULL, 0, cb);
 }
 
@@ -564,7 +570,6 @@ void MQTTTask(void) {
                     MQTTState=MQTT_CONNECT_ACK;
                     MQTTResponseCode=MQTT_SUCCESS;
                 }
-                MQTTStop();
                 //lastInActivity =TickGet();
             }
 			break;
@@ -773,7 +778,6 @@ void MQTTTask(void) {
 				MQTTPutArray(MQTTBuffer,2);
 				lastOutActivity = TickGet();
 				MQTTState=MQTT_CLOSE;
-				MQTTStop();
             }
 			break;
 
@@ -947,43 +951,6 @@ void MQTTTask(void) {
 		}
 	}
 
-
-/*****************************************************************************
-  Function:
-	BOOL MQTTIsBusy(void)
-
-  Summary:
-	Determines if the MQTT client is busy.
-
-  Description:
-	Call this function to determine if the MQTT client is busy performing
-	background tasks.  This function should be called after any call to 
-	MQTTReceiveMail, MQTTPutDone to determine if the stack has finished
-	performing its internal tasks.  It should also be called prior to any
-	call to MQTTIsPutReady to verify that the MQTT client has not
-	prematurely disconnected.  When this function returns FALSE, the next
-	call should be to MQTTEndUsage to release the module and obtain the
-	status code for the operation.
-
-  Precondition:
-	MQTTBeginUsage returned TRUE on a previous call.
-
-  Parameters:
-	None
-
-  Return Values:
-	TRUE - The MQTT Client is busy with internal tasks or sending an 
-		on-the-fly message.
-	FALSE - The MQTT Client is terminated and is ready to be released.
-  ***************************************************************************/
-BOOL MQTTIsBusy(void) {
-	return MQTTState != MQTT_HOME;
-}
-
-BOOL MQTTIsIdle(void) {
-	return MQTTState == MQTT_IDLE;
-}
-
 /*****************************************************************************
   Function:
 	WORD MQTTPutArray(BYTE* Data, WORD Len)
@@ -1065,95 +1032,8 @@ WORD MQTTPutROMArray(ROM BYTE* Data, WORD Len) {
 	}
 #endif
 
-/*****************************************************************************
-  Function:
-	WORD MQTTPutString(BYTE* Data)
 
-  Description:
-	Writes a string to the MQTT client.
-
-  Precondition:
-	MQTTBeginUsage returned TRUE on a previous call.
-
-  Parameters:
-	Data - The data to be written
-
-  Returns:
-	The number of bytes written.  If less than the length of Data, then the 
-	TX FIFO became full before all bytes could be written.
-	
-  Remarks:
-	This function should only be called externally when the MQTT client is
-	generating an on-the-fly message.  (That is, MQTTSendMail was called
-	with MQTTClient.Body set to NULL.)
-	
-  Internal:
-  ***************************************************************************/
-WORD MQTTPutString(BYTE* Data) {
-	WORD result = 0;
-
-	while(*Data) {
-		if(TCPPut(MySocket,*Data++)) {
-			result++;
-        }
-		else {
-			Data--;
-			break;
-        }
-    }
-
-	return result;
-}
-
-/*****************************************************************************
-  Function:
-	WORD MQTTPutROMString(ROM BYTE* Data)
-
-  Description:
-	Writes a string from ROM to the MQTT client.
-
-  Precondition:
-	MQTTBeginUsage returned TRUE on a previous call.
-
-  Parameters:
-	Data - The data to be written
-
-  Returns:
-	The number of bytes written.  If less than the length of Data, then the 
-	TX FIFO became full before all bytes could be written.
-	
-  Remarks:
-	This function should only be called externally when the MQTT client is
-	generating an on-the-fly message.  (That is, MQTTSendMail was called
-	with MQTTClient.Body set to NULL.)
-	
-  	This function is aliased to MQTTPutString on non-PIC18 platforms.
-	
-  Internal:
-	MQTTPut must be used instead of TCPPutString because "\r\n." must be
-	transparently replaced by "\r\n..".
-  ***************************************************************************/
-#if defined(__18CXX)
-WORD MQTTPutROMString(ROM BYTE* Data) {
-	WORD result = 0;
-
-	while(*Data) {
-		if(TCPPut(MySocket,*Data++)) {
-			result++;
-			}
-		else {
-			Data--;
-			break;
-			}
-		}
-
-	return result;
-	}
-#endif
-
-
-
-BOOL MQTTWrite(BYTE header, BYTE *buf, WORD length) {
+static BOOL MQTTWrite(BYTE header, BYTE *buf, WORD length) {
 	BYTE lenBuf[4];
 	BYTE llen = 0;
 	BYTE digit;
@@ -1187,7 +1067,7 @@ BOOL MQTTWrite(BYTE header, BYTE *buf, WORD length) {
     }
 }
 
-WORD MQTTWriteString(const char *string, BYTE *buf, WORD pos) {
+static WORD MQTTWriteString(const char *string, BYTE *buf, WORD pos) {
     const char *idp = string;
     WORD i=0;
 
@@ -1202,7 +1082,7 @@ WORD MQTTWriteString(const char *string, BYTE *buf, WORD pos) {
 }
 
 #if defined(__18CXX)
-WORD MQTTWriteROMString(const ROMchar *string, BYTE *buf, WORD pos) {
+static WORD MQTTWriteROMString(const ROMchar *string, BYTE *buf, WORD pos) {
   const char *idp = string;
   WORD i=0;
 
@@ -1221,23 +1101,20 @@ BOOL MQTTConnected(void) {
     BOOL rc;
 
     rc = MQTTClient.bConnected;
-    if(!rc) { 
-		MQTTStop();
-    }
     return rc;
 }
 
-inline BOOL MQTTReadByte(BYTE *ch) {		// ottimizzare, evitare..?
+static inline BOOL MQTTReadByte(BYTE *ch) {		// ottimizzare, evitare..?
 	if (TCPGet(MySocket, ch)) return TRUE;
 	return FALSE;
 }
 
-void MQTTPrepareBuffer(void) {
+static void MQTTPrepareBuffer(void) {
     MQTTBufferIdx = 0;
     RPSMState=RPSM_INIT;
 }
 
-BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
+static BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
 	BYTE digit = 0;
 	static WORD i;
     static BYTE lengthLength;
@@ -1308,44 +1185,6 @@ BOOL MQTTReadPacket(WORD *retlen, BYTE* retll) {
 
 /*****************************************************************************
   Function:
-	BOOL MQTTConnect(const char *id, const char *user, const char *pass, const char *willTopic, BYTE willQos, BYTE willRetain, const char *willMessage)
-
-  Summary:
-	Connects to a server with given ID etc.
-
-  Description:
-	This function starts the state machine that performs the actual
-	transmission of the message.  Call this function after all the fields
-	in MQTTClient have been set.
-
-  Precondition:
-	MQTTBeginUsage returned TRUE on a previous call.
-
-  Parameters:
-	None
-
-  Returns:
-	None
-  ***************************************************************************/
-BOOL MQTTConnect(char *id, char *user, char *pass, char *willTopic, BYTE willQos, BYTE willRetain, char *willMessage) {
-
-	if(MQTTState==MQTT_IDLE) {
-		MQTTClient.ConnectId.szRAM=id;
-		MQTTClient.Username.szRAM=user;
-		MQTTClient.Password.szRAM=pass;
-		MQTTClient.ServerPort=MQTTClient.bSecure ? MQTT_PORT_SECURE : MQTT_PORT;
-		MQTTClient.WillTopic.szRAM=pass;
-		MQTTClient.WillQOS=willQos;
-		MQTTClient.WillRetain=willRetain;
-		MQTTClient.WillMessage.szRAM=willMessage;
-		MQTTState=MQTT_CONNECT;
-		return 1;
-    }
-	return 0;
-}
-
-/*****************************************************************************
-  Function:
 	void MQTTPing(void)
 
   Summary:
@@ -1365,7 +1204,7 @@ BOOL MQTTConnect(char *id, char *user, char *pass, char *willTopic, BYTE willQos
   Returns:
 	None
   ***************************************************************************/
-BOOL MQTTPing(void) {
+static BOOL MQTTPing(void) {
 
 	if(MQTTState==MQTT_IDLE) {
 		if(MQTTClient.bConnected) {
@@ -1376,42 +1215,6 @@ BOOL MQTTPing(void) {
 	return 0;
 }
 
-/*****************************************************************************
-  Function:
-	void MQTTPublish(const char *topic, BYTE *payload, WORD plength, BOOL retained)
-
-  Summary:
-	Publishes data for a topic
-
-  Description:
-	This function starts the state machine that performs the actual
-	transmission of the message.  Call this function after all the fields
-	in MQTTClient have been set.
-
-  Precondition:
-	MQTTBeginUsage returned TRUE on a previous call.
-
-  Parameters:
-	None
-
-  Returns:
-	None
-  ***************************************************************************/
-BOOL MQTTPublish(char *topic, BYTE *payload, WORD plength, BOOL retained) {
-
-	//solo per ROM ovvero per C30!
-	if(MQTTState==MQTT_IDLE) {
-		if(MQTTClient.bConnected) {
-			MQTTClient.Topic.szRAM=topic;
-			MQTTClient.Payload.szRAM=payload;
-			MQTTClient.Plength=plength;
-			MQTTClient.Retained=retained;
-			MQTTState=MQTT_PUBLISH;
-			return 1;
-        }
-    }
-	return 0;
-}
 
 /*****************************************************************************
   Function:
@@ -1434,47 +1237,12 @@ BOOL MQTTPublish(char *topic, BYTE *payload, WORD plength, BOOL retained) {
   Returns:
 	None
   ***************************************************************************/
-BOOL MQTTPubACK(WORD id) {
+static BOOL MQTTPubACK(WORD id) {
 
 	if(MQTTState==MQTT_IDLE) {
 		if(MQTTClient.bConnected) {
 			MQTTClient.MsgId=id;			// uso questo, anche per loop()... (v.)
 			MQTTState=MQTT_PUBACK;
-			return 1;
-        }
-    }
-	return 0;
-}
-
-/*****************************************************************************
-  Function:
-	void MQTTSubscribe(const char topic, BYTE qos)
-
-  Summary:
-	Subscribes to a topic
-
-  Description:
-	This function starts the state machine that performs the actual
-	transmission of the message.  Call this function after all the fields
-	in MQTTClient have been set.
-
-  Precondition:
-	MQTTBeginUsage returned TRUE on a previous call.
-
-  Parameters:
-	None
-
-  Returns:
-	None
-  ***************************************************************************/
-BOOL MQTTSubscribe(char *topic, BYTE qos) {
-
-	//solo per ROM ovvero per C30!
-	if(MQTTState==MQTT_IDLE) {
-		if(MQTTClient.bConnected) {
-			MQTTClient.Topic.szRAM=topic;
-			MQTTClient.QOS=qos;
-			MQTTState=MQTT_SUBSCRIBE;
 			return 1;
         }
     }
@@ -1509,11 +1277,6 @@ BOOL MQTTDisconnect(void) {
 			return 1;
         }
     }
-	return 0;
-}
-
-BOOL MQTTStop(void) {
-    //TODO
 	return 0;
 }
 

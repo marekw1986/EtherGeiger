@@ -266,7 +266,7 @@ void mqtt_init (void) {
 
 void mqtt_on_connect(void) {
     printf("MQTT connected\r\n");
-    MQTTSubscribe_("testTopic", mqtt_on_subscribe);
+    MQTTSubscribe("testTopic", mqtt_on_subscribe);
     //MQTTSendStr("testTopic", "Hellord!", NULL);
 }
 

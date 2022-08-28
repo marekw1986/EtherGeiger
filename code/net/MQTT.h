@@ -208,29 +208,15 @@ extern WORD MQTTResponseCode;
 BOOL MQTTBeginUsage(void);
 WORD MQTTEndUsage(void);
 void MQTTTask(void);
-BOOL MQTTConnect(char *, char *, char *, char *, BYTE , BYTE , char *);
-BOOL MQTTIsBusy(void);
-BOOL MQTTPublish(char *, BYTE *, WORD , BOOL );
-BOOL MQTTPubACK(WORD);
-BOOL MQTTSubscribe(char *, BYTE);
-BOOL MQTTPing(void);
 BOOL MQTTDisconnect(void);
-BOOL MQTTStop(void);
 
 void MQTTSendData(const char* topic, const char* payload, WORD payloadlen, void(*cb)(void));
 void MQTTSendStr(const char* topic, const char* payload, void(*cb)(void));
-void MQTTSubscribe_(const char* topic, void(*cd)(void));
+void MQTTSubscribe(const char* topic, void(*cd)(void));
 void MQTTSetConnectCallback(void(*callback)(void));
 void MQTTSetReceiveCallback(void(*callback)(const char *, const WORD, const BYTE *, const WORD));
 
-
-BOOL MQTTWrite(BYTE , BYTE *, WORD );
-WORD MQTTWriteString(const char *, BYTE *, WORD );
-BOOL MQTTReadPacket(WORD *retlen, BYTE *retll);  //BYTE *
-BOOL MQTTPut(BYTE c);
 WORD MQTTPutArray(BYTE *Data, WORD Len);
-WORD MQTTPutString(BYTE *Data);
-BOOL MQTTReadByte(BYTE *ch);
 BOOL MQTTConnected(void);
 #define MQTTAvailable() TCPIsGetReady(MySocket)
 
