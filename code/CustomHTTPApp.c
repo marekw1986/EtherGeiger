@@ -809,6 +809,10 @@ void HTTPPrint_mqttupdate (void) {
     TCPPutString(sktHTTP, buff);
 }
 
+void HTTPPrint_mqttstatus (void) {
+    TCPPutString(sktHTTP, MQTTConnected() ? "Polaczony" : "Rozlaczony");
+}
+
 void HTTPPrint_sensors (void) {
     BYTE buff[512];
     constructJSON((char*)buff, sizeof(buff)-1);

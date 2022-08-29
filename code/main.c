@@ -266,7 +266,7 @@ void mqtt_init (void) {
 
 void mqtt_on_connect(void) {
     printf("MQTT connected\r\n");
-    MQTTSubscribe("testTopic", mqtt_on_subscribe);
+    //MQTTSubscribe("testTopic", mqtt_on_subscribe);
     //MQTTSendStr("testTopic", "Hellord!", NULL);
 }
 
@@ -297,8 +297,6 @@ void handle_mqtt_log(void) {
     if ( ((uint32_t)(uptime()-timer) >= 30) && (uptime() > 60) ) {
         constructJSON(JSONBuffer, sizeof(JSONBuffer)-2);
         MQTTSendStr(config.mqtt_topic, JSONBuffer, mqtt_on_publish);
-        MQTTSendStr(config.mqtt_topic, "Druga wiadomosc", mqtt_on_publish);
-        MQTTSendStr(config.mqtt_topic, "Trzecia wiadomosc", mqtt_on_publish);
         timer = uptime();
     }
 }
