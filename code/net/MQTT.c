@@ -645,7 +645,7 @@ void MQTTTask(void) {
 			if(TCPIsPutReady(MySocket)>=2) {
 				MQTTPutArray(MQTTBuffer,2);
 				lastOutActivity = TickGet();
-                MQTTPrepareBuffer();
+                //MQTTPrepareBuffer();
 				MQTTState=MQTT_IDLE;			// 
             }
 			break;
@@ -677,7 +677,7 @@ void MQTTTask(void) {
                 if (!MQTTClient.QOS) {  //No QoS, so we do not wait with executing callback
                     if (publish_Callback) { publish_Callback(); }
                 }
-                MQTTPrepareBuffer();
+                //MQTTPrepareBuffer();
                 MQTTState=MQTT_IDLE;
                 //printf("MQTT_PUBLISH -> MQTT_IDLE\r\n");
 				MQTTResponseCode=MQTT_SUCCESS;
@@ -719,7 +719,7 @@ void MQTTTask(void) {
                         if (subscribe_Callback) { subscribe_Callback(); }
                     }
                     MQTTState=MQTT_IDLE;   //was MQTT_SUBSCRIBE_ACK
-                    MQTTPrepareBuffer();
+                    //MQTTPrepareBuffer();
                 }
 				MQTTResponseCode=MQTT_SUCCESS;
             }
@@ -735,7 +735,7 @@ void MQTTTask(void) {
 				MQTTBuffer[length++] = HIBYTE(MQTTClient.MsgId);
 				MQTTBuffer[length++] = LOBYTE(MQTTClient.MsgId);
 				if(MQTTWrite(MQTTPUBACK,MQTTBuffer,length-5)) {
-                    MQTTPrepareBuffer();
+                    //MQTTPrepareBuffer();
 					MQTTState=MQTT_IDLE;
                 }
             }
@@ -758,7 +758,7 @@ void MQTTTask(void) {
 					length = MQTTWriteString(MQTTClient.Topic.szRAM, MQTTBuffer,length);
 				if(MQTTWrite(MQTTUNSUBSCRIBE | MQTTQOS1,MQTTBuffer,length-5)) {
 					MQTTState = MQTT_IDLE;   //was MQTT_UNSUBSCRIBE_ACK
-                    MQTTPrepareBuffer();
+                    //MQTTPrepareBuffer();
                 }
 				MQTTResponseCode=MQTT_SUCCESS;
             }
