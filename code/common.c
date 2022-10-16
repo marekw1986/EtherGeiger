@@ -20,7 +20,7 @@ uint32_t mqtt_last_publish = 0;
 FRESULT FormatSpiFlashDisk (void) {
     FRESULT res;
     char buffer[4096];
-    res = f_mkfs("0:", FM_ANY, 0, buffer, sizeof(buffer));
+    res = f_mkfs("0:", 0, buffer, sizeof(buffer));
     if (res != FR_OK) {printf("f_mmkfs error code: %i\r\n", res);}
     else {printf("f_mkfs OK\r\n");}
     return res;
