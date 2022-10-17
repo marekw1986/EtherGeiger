@@ -12,6 +12,7 @@
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/TCPIPConfig.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/common.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/net/MQTT.c</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/fatfs/diskio.c</file>
         </group>
     </open-files>
 </project-private>

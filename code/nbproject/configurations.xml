@@ -20,7 +20,6 @@
         <itemPath>fatfs/ff.h</itemPath>
         <itemPath>fatfs/ffconf.h</itemPath>
         <itemPath>fatfs/diskio.h</itemPath>
-        <itemPath>fatfs/integer.h</itemPath>
         <itemPath>fatfs/SPIFlash.h</itemPath>
       </logicalFolder>
       <logicalFolder name="f6" displayName="Geiger" projectFiles="true">
