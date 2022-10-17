@@ -81,11 +81,18 @@ DRESULT disk_read (
 {
 	switch (pdrv) {
         case SPI_FLASH :
-            while (count) {
-                SPIFlashReadArray(sector*4096, buff, 4096);
-                buff+=4096;
-                sector++;
-                count--;
+             {
+                BYTE tmpbuff[4096];
+                WORD shift;
+
+                while (count) {
+                    SPIFlashReadArray((sector/8)*4096, tmpbuff, 4096);
+                    shift = (sector%8)*512;
+                    memcpy(buff, tmpbuff+shift, 512);
+                    buff+=512;
+                    sector++;
+                    count--;
+                }
             }
             return RES_OK;
 
@@ -120,15 +127,25 @@ DRESULT disk_write (
 {
 	switch (pdrv) {
         case SPI_FLASH :
-            // translate the arguments here
-            while (count) {     
-                SPIFlashEraseSector(sector*4096);
-                SPIFlashBeginWrite(sector*4096);
-                SPIFlashWriteArray((unsigned char *)buff, 4096);
-                buff+=4096;
-                sector++;
-                count--;
-            }
+			{
+				BYTE tmpbuff[4096];
+				WORD shift;
+				// translate the arguments here
+				while (count) {
+					// We need to read sector first to local buffer
+					// Then we need calculater the the 512 bytes part of the buffer that needs to be modified
+					// Then We modify that part and write back
+					SPIFlashReadArray((sector/8)*4096, tmpbuff, 4096);
+					shift = (sector%8)*512;
+					memcpy(tmpbuff+shift, buff, 512);                
+					SPIFlashEraseSector((sector/8)*4096);
+					SPIFlashBeginWrite((sector/8)*4096);
+					SPIFlashWriteArray((unsigned char *)tmpbuff, 4096);
+					buff+=512;
+					sector++;
+					count--;
+				}
+			}
             return RES_OK;
 
         case USB :
@@ -166,11 +183,11 @@ DRESULT disk_ioctl (
 
             }
             else if (cmd == GET_SECTOR_COUNT) {
-                *(DWORD*)buff = 480;
+                *(DWORD*)buff = (480*8);    //Each 4096 secotor is divided to 8 smaller sectors
                 return RES_OK;
             }
             else if (cmd == GET_SECTOR_SIZE) {
-                *(WORD*)buff = 4096;
+                *(WORD*)buff = 512;     //Actual size is 4096 but we divid it to smaller sectors
                 return RES_OK;
             }
             else if (cmd == GET_BLOCK_SIZE) {
