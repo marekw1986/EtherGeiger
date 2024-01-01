@@ -498,7 +498,8 @@ void HTTPPrint_ip(void) {
     char buf[4];
     
     for (i=0; i<4; i++) {
-        TCPPutString(sktHTTP, itoa(buf, AppConfig.MyIPAddr.v[i], 10));
+        snprintf(buf, sizeof(buf), "%d", AppConfig.MyIPAddr.v[i]);
+        TCPPutString(sktHTTP, buf);
         if (i < 3) TCPPutROMString(sktHTTP, (ROM void*)".");
     }
     return;
@@ -509,7 +510,7 @@ void HTTPPrint_mac(void) {
     char buf[4];
     
     for (i=0; i<6; i++) {
-        snprintf(buf, 3, "%02X", AppConfig.MyMACAddr.v[i]);
+        snprintf(buf, sizeof(buf), "%02X", AppConfig.MyMACAddr.v[i]);
         TCPPutString(sktHTTP, buf);
         if (i<5) TCPPutROMString(sktHTTP, (ROM void*)":");
     }
@@ -520,7 +521,8 @@ void HTTPPrint_netmask(void) {
     char buf[4];
     
     for (i=0; i<4; i++) {
-        TCPPutString(sktHTTP, itoa(buf, AppConfig.MyMask.v[i], 10));
+        snprintf(buf, sizeof(buf), "%d", AppConfig.MyMask.v[i]);
+        TCPPutString(sktHTTP, buf);
         if (i < 3) TCPPutROMString(sktHTTP, (ROM void*)".");
     }    
     return;
@@ -531,7 +533,8 @@ void HTTPPrint_gw(void) {
     char buf[4];
     
     for (i=0; i<4; i++) {
-        TCPPutString(sktHTTP, itoa(buf, AppConfig.MyGateway.v[i], 10));
+        snprintf(buf, sizeof(buf), "%d", AppConfig.MyGateway.v[i]);
+        TCPPutString(sktHTTP, buf);
         if (i < 3) TCPPutROMString(sktHTTP, (ROM void*)".");
     }    
     return;
@@ -542,7 +545,8 @@ void HTTPPrint_dns1(void) {
     char buf[4];
     
     for (i=0; i<4; i++) {
-        TCPPutString(sktHTTP, itoa(buf, AppConfig.PrimaryDNSServer.v[i], 10));
+        snprintf(buf, sizeof(buf), "%d", AppConfig.PrimaryDNSServer.v[i]);
+        TCPPutString(sktHTTP, buf);
         if (i < 3) TCPPutROMString(sktHTTP, (ROM void*)".");
     }    
     return;
@@ -553,7 +557,8 @@ void HTTPPrint_dns2(void) {
     char buf[4];
     
     for (i=0; i<4; i++) {
-        TCPPutString(sktHTTP, itoa(buf, AppConfig.SecondaryDNSServer.v[i], 10));
+        snprintf(buf, sizeof(buf), "%d", AppConfig.SecondaryDNSServer.v[i]);
+        TCPPutString(sktHTTP, buf);
         if (i < 3) TCPPutROMString(sktHTTP, (ROM void*)".");
     }    
     return;
@@ -586,7 +591,8 @@ void HTTPPrint_mqtt_topic(void) {
 
 void HTTPPrint_mqtt_port(void) {
     char tmp[32];
-    TCPPutString(sktHTTP, itoa(tmp, config.mqtt_port, 10));
+    snprintf(tmp, sizeof(tmp), "%d", config.mqtt_port);
+    TCPPutString(sktHTTP, tmp);
     return;
 }
 
@@ -598,7 +604,8 @@ void HTTPPrint_newip(void) {
     eprom_read((void*)&newConfig, sizeof(newConfig));
     
     for (i=0; i<4; i++) {
-        TCPPutString(sktHTTP, itoa(buf, newConfig.AppConfig.MyIPAddr.v[i], 10));
+        snprintf(buf, sizeof(buf), "%d", newConfig.AppConfig.MyIPAddr.v[i]);
+        TCPPutString(sktHTTP, buf);
         if (i < 3) TCPPutROMString(sktHTTP, (ROM void*)".");
     }
     return;
@@ -801,7 +808,7 @@ void HTTPPrint_cpufreq (void) {
 void HTTPPrint_mqttupdate (void) {
     BYTE buff[64];
     if (mqtt_last_publish) {
-        snprintf(buff, sizeof(buff)-1, "%d sek. temu", uptime()-mqtt_last_publish);
+        snprintf(buff, sizeof(buff), "%d sek. temu", uptime()-mqtt_last_publish);
     }
     else {
         strncpy(buff, "nigdy", sizeof(buff)-1);

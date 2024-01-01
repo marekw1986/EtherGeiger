@@ -1,6 +1,7 @@
 #include <math.h>
 #include <plib.h>
 #include "bme280.h"
+#include "../delay/delay.h"
 
 uint16_t bme_T1;
 int16_t bme_T2;
@@ -54,15 +55,15 @@ uint8_t bme_read_data(uint8_t reg)
     IdleI2C1();
     MasterWriteI2C1(BME280_ADDR | I2C_WRITE);
     IdleI2C1();
-    if (I2C1STATbits.ACKSTAT) return;
+    if (I2C1STATbits.ACKSTAT) return 0;
     MasterWriteI2C1(reg);
     IdleI2C1();
-    if (I2C1STATbits.ACKSTAT) return;
+    if (I2C1STATbits.ACKSTAT) return 0;
     RestartI2C1();
     IdleI2C1();
     MasterWriteI2C1(BME280_ADDR | I2C_READ);
     IdleI2C1();
-    if (I2C1STATbits.ACKSTAT) return;
+    if (I2C1STATbits.ACKSTAT) return 0;
     I2C1CONbits.RCEN = 1;
     while (!DataRdyI2C1());
     tmp = I2C1RCV;

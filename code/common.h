@@ -9,6 +9,7 @@
 #define	COMMON_H
 
 #include <stdint.h>
+#include "net/TCPIP.h"
 #include "fatfs/ff.h"
 
 typedef struct {
@@ -39,6 +40,7 @@ extern "C" {
 FRESULT FormatSpiFlashDisk (void);
 unsigned char BcdToByte(unsigned char bcd);
 unsigned char ByteToBcd(unsigned char i);
+unsigned char StringToMACAddress(BYTE* str, MAC_ADDR* MACAddress);
 char* constructJSON (char* buf, uint16_t len);
 uint8_t contain_space(const char* str);
 
