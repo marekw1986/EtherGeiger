@@ -98,6 +98,7 @@ void (*subscribe_Callback)(void) = NULL;
 void (*unsubscribe_Callback)(void) = NULL;
 void (*receive_Callback)(const char *, const WORD, const BYTE *, const WORD) = NULL;
 void (*publish_Callback)(void) = NULL;
+void (*disconnect_Callback)(void) = NULL;
 
 
 static BOOL MQTTReadPacket(WORD *retlen, BYTE *retll);  //BYTE *
@@ -260,6 +261,12 @@ void MQTTPutMessageInRingBuffer(MQTTMessageType_t type, const char* topic, const
 void MQTTSetConnectCallback(void(*callback)(void)) {
     if (callback) {
         connect_Callback = callback;
+    }
+}
+
+void MQTTSetDisconnectCallback(void(*callback)(void)) {
+    if (callback) {
+        disconnect_Callback = callback;
     }
 }
 
@@ -807,6 +814,9 @@ void MQTTTask(void) {
 			MQTTState = MQTT_RECONNECT;  //MQTT_HOME
             MQTTFlags.bits.MQTTInUse = FALSE;
             MQTTClient.bConnected = FALSE;
+            if (disconnect_Callback) {
+                disconnect_Callback();
+            }
 			break;
         
         case MQTT_RECONNECT:

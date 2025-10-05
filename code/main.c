@@ -103,7 +103,7 @@ enum {MQTT_RADIATION, MQTT_TEMPERATURE, MQTT_HUMIDITY, MQTT_PRESSURE};
 char buffer[128];
 FATFS SPIFatFS;
 FATFS USBFatFS;
-uint8_t discoveryMessageSessionActive = 0;
+uint8_t mqttMessageSessionActive = 0;
 uint8_t mqttMessageNumber = 0;
 uint8_t discoveryMessagesSent = 0;
 uint16_t egeigerId;
@@ -122,6 +122,7 @@ void mqtt_log_next_value(void);
 void mqtt_on_connect(void);
 void mqtt_on_publish(void);
 void mqtt_on_subscribe(void);
+void mqtt_on_disconnect(void);
 void mqtt_on_receive(const char *topic, const WORD topicLength, const BYTE *payload, const WORD payloadLength);
 void handle_send_discovery_message(void);
 void next_discovery_message(void);
@@ -190,6 +191,7 @@ int main(int argc, char** argv) {
     egeigerId = compute_id_from_mac();
     MQTTSetConnectCallback(mqtt_on_connect);
     MQTTSetReceiveCallback(mqtt_on_receive);
+    MQTTSetDisconnectCallback(mqtt_on_disconnect);
     mqtt_init();
     
     while (1) {
@@ -331,10 +333,10 @@ void mqtt_init (void) {
 
 void mqtt_on_connect(void) {
     printf("MQTT connected\r\n");
-    if (!discoveryMessagesSent) {
-        discoveryMessageSessionActive = 1;
-        mqttMessageNumber = 0;
-    }
+//    if (!discoveryMessagesSent) {
+    mqttMessageSessionActive = 1;
+    mqttMessageNumber = 0;
+//    }
     //MQTTSubscribe("testTopic", mqtt_on_subscribe);
 }
 
@@ -345,6 +347,11 @@ void mqtt_on_publish(void) {
 
 void mqtt_on_subscribe(void) {
     printf("MQTT subscribed\r\n");
+}
+
+void mqtt_on_disconnect(void) {
+    printf("MQTT disconnected - callback\r\n");
+    mqttMessageSessionActive = 0;
 }
 
 void mqtt_on_receive(const char *topic, const WORD topicLength, const BYTE *payload, const WORD payloadLength) {
@@ -360,6 +367,10 @@ void mqtt_on_receive(const char *topic, const WORD topicLength, const BYTE *payl
 
 void handle_mqtt_log(void) {
     static uint32_t timer = 0;
+    
+    if (!mqttMessageSessionActive) {
+        return;
+    }
     
     if ( ((uint32_t)(uptime()-timer) >= 30) && (uptime() > 60) ) {
         const disco_message_t* currDiscoConst = &discoveryMessagesConst[mqttMessageNumber];
@@ -410,7 +421,7 @@ void mqtt_log_next_value(void) {
 //}
 
 void handle_send_discovery_message(void) {
-    if (!discoveryMessageSessionActive) {
+    if (!mqttMessageSessionActive) {
         return;
     }
     
@@ -441,18 +452,18 @@ void handle_send_discovery_message(void) {
     
     MQTTSendStrRetained(MQTTTopicBuffer, MQTTMessageBuffer, next_discovery_message);
     
-    discoveryMessageSessionActive = 0;
+    mqttMessageSessionActive = 0;
 }
 
 void next_discovery_message(void) {
     mqttMessageNumber++;
     if (mqttMessageNumber >= DISCOVERY_MSG_NUMBER) {
         mqttMessageNumber = 0;
-        discoveryMessageSessionActive = 0;
+        mqttMessageSessionActive = 0;
         discoveryMessagesSent = 1;
         return;
     }
-    discoveryMessageSessionActive = 1;
+    mqttMessageSessionActive = 1;
 }
 
 
