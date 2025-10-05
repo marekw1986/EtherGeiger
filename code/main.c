@@ -96,6 +96,7 @@ FATFS SPIFatFS;
 FATFS USBFatFS;
 uint8_t discoveryMessageSessionActive = 0;
 uint8_t discoveryMessageNumber = 0;
+uint8_t discoveryMessagesSent = 0;
 
 char MQTTTopicBuffer[128];
 char MQTTMessageBuffer[512];
@@ -203,8 +204,12 @@ int main(int argc, char** argv) {
         handle_ui();
         lcd_handle();
         handle_usb_log();
-        handle_send_discovery_message();
-        handle_mqtt_log();
+        if (!discoveryMessagesSent) {
+            handle_send_discovery_message();
+        }
+        else {
+            handle_mqtt_log();
+        }
     }
 
     return (EXIT_SUCCESS);
@@ -333,8 +338,10 @@ void mqtt_send_discovery(void) {
 
 void mqtt_on_connect(void) {
     printf("MQTT connected\r\n");
-    discoveryMessageSessionActive = 1;
-    discoveryMessageNumber = 0;
+    if (!discoveryMessagesSent) {
+        discoveryMessageSessionActive = 1;
+        discoveryMessageNumber = 0;
+    }
 //    mqtt_send_discovery();
     //MQTTSubscribe("testTopic", mqtt_on_subscribe);
     //MQTTSendStr("testTopic", "Hellord!", NULL);
@@ -399,6 +406,7 @@ void next_discovery_message(void) {
     if (discoveryMessageNumber >= DISCOVERY_MSG_NUMBER) {
         discoveryMessageNumber = 0;
         discoveryMessageSessionActive = 0;
+        discoveryMessagesSent = 1;
         return;
     }
     discoveryMessageSessionActive = 1;
