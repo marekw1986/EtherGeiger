@@ -70,7 +70,7 @@ const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
         "uSiv/h",
         NULL,
         "{{ value | float }}",
-        "eg_rad"
+        "rad"
     },
     {
         "Temperatura",
@@ -78,7 +78,7 @@ const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
         "\u00B0C", //"\\xC2\\xB0C",
         "temperature",
         "{{ value | float }}",
-        "eg_temp"
+        "temp"
     },
     {
         "Wilgotnosc powietrza",
@@ -86,7 +86,7 @@ const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
         "%",
         "humidity",
         "{{ value | float }}",
-        "eg_hum"
+        "hum"
     },
     {
         "Cisnienie atmosferyczne",
@@ -94,7 +94,7 @@ const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
         "hPa",
         "pressure",
         "{{ value | float }}",
-        "eg_press"
+        "press"
     }
 };
 
@@ -431,7 +431,11 @@ void handle_send_discovery_message(void) {
     else {
         class[0] = '\0';
     }
-    int siz = snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "{\"name\":\"%s\",\"state_topic\":\"%s/%s\",\"unit_of_measurement\":\"%s\",%s\"unique_id\":\"%s\",\"device\":{\"identifiers\":[\"EG%08lX\"],\"name\":\"EtherGeiger\"}}", currDiscoConst->name, config.mqtt_topic, currDiscoConst->state_topic, currDiscoConst->unit_of_measurement, class, currDiscoConst->unique_id, egeigerId);
+    
+    char unique_id[64];
+    snprintf(unique_id, sizeof(unique_id), "eg%08lX%s", egeigerId, currDiscoConst->unique_id);
+    
+    int siz = snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "{\"n\":\"%s\",\"stat_t\":\"%s/%s\",\"unit_of_meas\":\"%s\",%s\"uniq_id\":\"%s\",\"dev\":{\"ids\":[\"EG%08lX\"],\"name\":\"EtherGeiger\"}}", currDiscoConst->name, config.mqtt_topic, currDiscoConst->state_topic, currDiscoConst->unit_of_measurement, class, unique_id, egeigerId);
     printf("Prepared content of discovery message: %s\n", MQTTMessageBuffer);
     printf("Size: %d\n", siz);
     
