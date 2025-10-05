@@ -218,6 +218,7 @@ void MQTTSendData(const char* topic, const char* payload, WORD payloadlen, void(
 }
 
 void MQTTSendStr(const char* topic, const char* payload, void(*cb)(void)) {
+    MQTTClient.Retained = 0;
     MQTTSendData(topic, payload, strlen(payload), cb);
 }
 
@@ -675,7 +676,10 @@ void MQTTTask(void) {
 				for(i=0;i<MQTTClient.Plength;i++)
 					MQTTBuffer[length++] = MQTTClient.Payload.szRAM[i];		// idem ROM/RAM ..
 				BYTE header = MQTTPUBLISH | (MQTTClient.QOS ? (MQTTClient.QOS==2 ? MQTTQOS2 : MQTTQOS1) : MQTTQOS0);
-				if(MQTTClient.Retained) header |= 1;
+				if(MQTTClient.Retained) {
+                    MQTTClient.Retained = 0;
+                    header |= 1;
+                }
 
 				//if(MQTTWrite(header,MQTTBuffer,length-5))		// si potrebbe spezzare in 2 per non rifare tutto il "prepare" qua sopra...
 				MQTTWrite(header,MQTTBuffer,length-5);
@@ -858,7 +862,7 @@ void MQTTTask(void) {
                             MQTTClient.Topic.szRAM = (char*)data.topic;
                             MQTTClient.Payload.szRAM = (char*)data.payload;
                             MQTTClient.Plength = data.payloadlen;
-                            MQTTClient.Retained = 0;
+//                            MQTTClient.Retained = 0;
                             if (data.on_action) {
                                 publish_Callback = data.on_action;
                             }
