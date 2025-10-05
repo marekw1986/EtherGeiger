@@ -60,6 +60,7 @@ typedef struct {
     const char* unit_of_measurement;
     const char* device_class;
     const char* value_template;
+    const char* unique_id;
 //    const char* device_identifiers;
 //    const char* device_name;
 } disco_message_t;
@@ -69,22 +70,25 @@ const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
         "Promieniowanie",
         "radiation",
         "uSiv/h",
-        "radiation",
-        "{{ value | float }}"
+        "power",
+        "{{ value | float }}",
+        "eg_rad"
     },
     {
         "Temperatura",
         "temperature",
         "deg C",
         "temperature",
-        "{{ value | float }}"
+        "{{ value | float }}",
+        "eg_temp"
     },
     {
         "Wilgotnosc powietrza",
         "humidity",
         "%",
         "humidity",
-        "{{ value | float }}"
+        "{{ value | float }}",
+        "eg_hum"
     }
 };
 
@@ -108,6 +112,7 @@ static void handle_bme_read (void);
 char* constructJSON (char* buf, uint16_t len);
 void mqtt_init (void);
 void handle_mqtt_log(void);
+void mqtt_log_next_value(void);
 void mqtt_on_connect(void);
 void mqtt_on_publish(void);
 void mqtt_on_subscribe(void);
@@ -348,14 +353,49 @@ void mqtt_on_receive(const char *topic, const WORD topicLength, const BYTE *payl
 
 void handle_mqtt_log(void) {
     static uint32_t timer = 0;
-    static char JSONBuffer[512];
     
     if ( ((uint32_t)(uptime()-timer) >= 30) && (uptime() > 60) ) {
-        constructJSON(JSONBuffer, sizeof(JSONBuffer)-2);
-        MQTTSendStr(config.mqtt_topic, JSONBuffer, mqtt_on_publish);
+        const disco_message_t* currDiscoConst = &discoveryMessagesConst[discoveryMessageNumber];
+        snprintf(MQTTTopicBuffer, sizeof(MQTTTopicBuffer), "%s/%s", config.mqtt_topic, currDiscoConst->state_topic);
+        switch (discoveryMessageNumber) {
+            case DISCOVERY_RADIATION:
+            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.4f", cpm2sievert(cpm()));
+            break;
+            
+            case DISCOVERY_TEMPERATURE:
+            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_temperature);
+            break;
+            
+            case DISCOVERY_HUMIDITY:
+            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_humidity);
+            break;
+            
+            default:
+            return;
+        }
+        printf("Sending %s to topic %s\n", MQTTMessageBuffer, MQTTTopicBuffer);
+        MQTTSendStr(MQTTTopicBuffer, MQTTMessageBuffer, mqtt_log_next_value);
         timer = uptime();
     }
 }
+
+void mqtt_log_next_value(void) {
+    discoveryMessageNumber++;
+    if (discoveryMessageNumber >= DISCOVERY_MSG_NUMBER) {
+        discoveryMessageNumber = 0;
+    }
+}
+
+//void handle_mqtt_log(void) {
+//    static uint32_t timer = 0;
+//    static char JSONBuffer[512];
+//    
+//    if ( ((uint32_t)(uptime()-timer) >= 30) && (uptime() > 60) ) {
+//        constructJSON(JSONBuffer, sizeof(JSONBuffer)-2);
+//        MQTTSendStr(config.mqtt_topic, JSONBuffer, mqtt_on_publish);
+//        timer = uptime();
+//    }
+//}
 
 void handle_send_discovery_message(void) {
     if (!discoveryMessageSessionActive) {
@@ -366,21 +406,13 @@ void handle_send_discovery_message(void) {
         printf("Error: trying to report discovery message with id (%d) >= %d", discoveryMessageNumber, DISCOVERY_MSG_NUMBER);
         return;
     }
-    
+
+    const disco_message_t* currDiscoConst = &discoveryMessagesConst[discoveryMessageNumber];
     const char* valueName = reportedValueNames[discoveryMessageNumber]; 
-    snprintf(MQTTTopicBuffer, sizeof(MQTTTopicBuffer), "homeassistant/sensor/%s/%s/config", config.mqtt_topic, valueName);
+    snprintf(MQTTTopicBuffer, sizeof(MQTTTopicBuffer), "homeassistant/sensor/%s/config", currDiscoConst->unique_id);
     printf("Prepared topic for discovery message: %s\n", MQTTTopicBuffer);
     
-    const disco_message_t* currDiscoConst = &discoveryMessagesConst[discoveryMessageNumber];
-    char unique_id[256];
-    snprintf(unique_id, sizeof(unique_id), "%s/%s", config.mqtt_topic, currDiscoConst->state_topic);
-    char* p;
-    for (p = unique_id; *p; ++p) {
-        if (*p == '/') {
-            *p = '_';
-        }
-    }
-    int siz = snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "{\"name\":\"%s\",\"stat_t\":\"%s/%s\",\"unit_of_meas\":\"%s\",\"dev_cla\":\"%s\",\"val_tpl\":\"%s\",\"uniq_id\":\"%s\"}", currDiscoConst->name, config.mqtt_topic, currDiscoConst->state_topic, currDiscoConst->unit_of_measurement, currDiscoConst->device_class, currDiscoConst->value_template, unique_id);
+    int siz = snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "{\"name\":\"%s\",\"state_topic\":\"%s/%s\",\"unit_of_measure\":\"%s\",\"device_class\":\"%s\",\"uniq_id\":\"%s\",\"device\":{\"identifiers\":[\"EG-1\"],\"name\":\"EtherGeiger\"}}", currDiscoConst->name, config.mqtt_topic, currDiscoConst->state_topic, currDiscoConst->unit_of_measurement, currDiscoConst->device_class, currDiscoConst->unique_id);
     printf("Prepared content of discovery message: %s\n", MQTTMessageBuffer);
     printf("Size: %d\n", siz);
     
