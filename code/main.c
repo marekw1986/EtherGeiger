@@ -52,7 +52,7 @@
 #pragma config UPLLEN   = ON
 #pragma config UPLLIDIV = DIV_2
 
-#define DISCOVERY_MSG_NUMBER 3
+#define DISCOVERY_MSG_NUMBER 4
 
 typedef struct {
     const char* name;
@@ -89,10 +89,18 @@ const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
         "humidity",
         "{{ value | float }}",
         "eg_hum"
+    },
+    {
+        "Cisnienie atmosferyczne",
+        "pressure",
+        "%",
+        "pressure",
+        "{{ value | float }}",
+        "eg_press"
     }
 };
 
-enum {DISCOVERY_RADIATION, DISCOVERY_TEMPERATURE, DISCOVERY_HUMIDITY};
+enum {DISCOVERY_RADIATION, DISCOVERY_TEMPERATURE, DISCOVERY_HUMIDITY, DISCOVERY_PRESSURE};
 const char* reportedValueNames[] = {"radiation", "temperature", "humidity"};
 
 char buffer[128];
@@ -368,6 +376,10 @@ void handle_mqtt_log(void) {
             
             case DISCOVERY_HUMIDITY:
             snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_humidity);
+            break;
+            
+            case DISCOVERY_PRESSURE:
+            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_pressure);
             break;
             
             default:
