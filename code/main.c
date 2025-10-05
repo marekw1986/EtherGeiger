@@ -316,35 +316,13 @@ void mqtt_init (void) {
     }
 }
 
-void mqtt_send_discovery(void) {
-    const char* topic = "homeassistant/sensor/ethergeiger_radiation/config";
-    const char* payload =
-        "{"
-        "\"name\": \"EtherGeiger Radiation\","
-        "\"state_topic\": \"ethergeiger/state\","
-        "\"unit_of_measurement\": \"µSv/h\","
-        "\"value_template\": \"{{ value_json.geiger.radiation }}\","
-        "\"unique_id\": \"ethergeiger_radiation\","
-        "\"device\": {"
-            "\"identifiers\": [\"ethergeiger01\"],"
-            "\"name\": \"EtherGeiger\","
-            "\"manufacturer\": \"Atlantis\","
-            "\"model\": \"EtherGeiger v1\""
-        "}"
-        "}";
-
-    MQTTSendStrRetained(topic, payload, NULL);
-}
-
 void mqtt_on_connect(void) {
     printf("MQTT connected\r\n");
     if (!discoveryMessagesSent) {
         discoveryMessageSessionActive = 1;
         discoveryMessageNumber = 0;
     }
-//    mqtt_send_discovery();
     //MQTTSubscribe("testTopic", mqtt_on_subscribe);
-    //MQTTSendStr("testTopic", "Hellord!", NULL);
 }
 
 void mqtt_on_publish(void) {
