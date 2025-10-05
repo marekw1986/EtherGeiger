@@ -52,9 +52,53 @@
 #pragma config UPLLEN   = ON
 #pragma config UPLLIDIV = DIV_2
 
+#define DISCOVERY_MSG_NUMBER 3
+
+typedef struct {
+    const char* name;
+    const char* state_topic;
+    const char* unit_of_measurement;
+    const char* device_class;
+    const char* value_template;
+//    const char* device_identifiers;
+//    const char* device_name;
+} disco_message_t;
+
+const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
+    {
+        "Promieniowanie jonizujace tla",
+        "radiation",
+        "uSiv/h",
+        "radiation",
+        "{{ value | float }}"
+    },
+    {
+        "Temperatura",
+        "temperature",
+        "deg C",
+        "temperature",
+        "{{ value | float }}"
+    },
+    {
+        "Wilgotnosc powietrza",
+        "humidity",
+        "%",
+        "humidity",
+        "{{ value | float }}"
+    }
+};
+
+enum {DISCOVERY_RADIATION, DISCOVERY_TEMPERATURE, DISCOVERY_HUMIDITY};
+const char* reportedValueNames[] = {"radiation", "temperature", "humidity"};
+
 char buffer[128];
 FATFS SPIFatFS;
 FATFS USBFatFS;
+uint8_t discoveryMessageSessionActive = 0;
+uint8_t discoveryMessageNumber = 0;
+
+char MQTTTopicBuffer[128];
+char MQTTMessageBuffer[512];
 
 extern void GenericTCPServer(void);
 static void handle_usb_log (void);
@@ -67,6 +111,8 @@ void mqtt_on_connect(void);
 void mqtt_on_publish(void);
 void mqtt_on_subscribe(void);
 void mqtt_on_receive(const char *topic, const WORD topicLength, const BYTE *payload, const WORD payloadLength);
+void handle_send_discovery_message(void);
+void next_discovery_message(void);
 
 int main(int argc, char** argv) {
     
@@ -157,6 +203,7 @@ int main(int argc, char** argv) {
         handle_ui();
         lcd_handle();
         handle_usb_log();
+        handle_send_discovery_message();
         handle_mqtt_log();
     }
 
@@ -264,8 +311,31 @@ void mqtt_init (void) {
     }
 }
 
+void mqtt_send_discovery(void) {
+    const char* topic = "homeassistant/sensor/ethergeiger_radiation/config";
+    const char* payload =
+        "{"
+        "\"name\": \"EtherGeiger Radiation\","
+        "\"state_topic\": \"ethergeiger/state\","
+        "\"unit_of_measurement\": \"µSv/h\","
+        "\"value_template\": \"{{ value_json.geiger.radiation }}\","
+        "\"unique_id\": \"ethergeiger_radiation\","
+        "\"device\": {"
+            "\"identifiers\": [\"ethergeiger01\"],"
+            "\"name\": \"EtherGeiger\","
+            "\"manufacturer\": \"Atlantis\","
+            "\"model\": \"EtherGeiger v1\""
+        "}"
+        "}";
+
+    MQTTSendStrRetained(topic, payload, NULL);
+}
+
 void mqtt_on_connect(void) {
     printf("MQTT connected\r\n");
+    discoveryMessageSessionActive = 1;
+    discoveryMessageNumber = 0;
+//    mqtt_send_discovery();
     //MQTTSubscribe("testTopic", mqtt_on_subscribe);
     //MQTTSendStr("testTopic", "Hellord!", NULL);
 }
@@ -299,6 +369,39 @@ void handle_mqtt_log(void) {
         MQTTSendStr(config.mqtt_topic, JSONBuffer, mqtt_on_publish);
         timer = uptime();
     }
+}
+
+void handle_send_discovery_message(void) {
+    if (!discoveryMessageSessionActive) {
+        return;
+    }
+    
+    if (discoveryMessageNumber >= DISCOVERY_MSG_NUMBER) {
+        printf("Error: trying to report discovery message with id (%d) >= %d", discoveryMessageNumber, DISCOVERY_MSG_NUMBER);
+        return;
+    }
+    
+    const char* valueName = reportedValueNames[discoveryMessageNumber]; 
+    snprintf(MQTTTopicBuffer, sizeof(MQTTTopicBuffer), "homeassistant/sensor/%s/%s/config", config.mqtt_topic, valueName);
+    printf("Prepared topic for discovery message: %s\n", MQTTTopicBuffer);
+    
+    const disco_message_t* currDiscoConst = &discoveryMessagesConst[discoveryMessageNumber];
+    snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "{\"name\": \"%s\", \"state_topic\": \"%s\", \"unit_of_measurement\": \"%s\", \"device_class\": \"%s\", \"value_template\": \"%s\", \"unique_id\": \"%s\"}", currDiscoConst->name, currDiscoConst->state_topic, currDiscoConst->unit_of_measurement, currDiscoConst->value_template, "unique_id");
+    printf("Prepared content of discovery message: %s\n", MQTTMessageBuffer);
+    
+    MQTTSendStrRetained(MQTTTopicBuffer, MQTTMessageBuffer, next_discovery_message);
+    
+    discoveryMessageSessionActive = 0;
+}
+
+void next_discovery_message(void) {
+    discoveryMessageNumber++;
+    if (discoveryMessageNumber >= DISCOVERY_MSG_NUMBER) {
+        discoveryMessageNumber = 0;
+        discoveryMessageSessionActive = 0;
+        return;
+    }
+    discoveryMessageSessionActive = 1;
 }
 
 

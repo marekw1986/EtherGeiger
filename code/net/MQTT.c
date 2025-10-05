@@ -221,6 +221,11 @@ void MQTTSendStr(const char* topic, const char* payload, void(*cb)(void)) {
     MQTTSendData(topic, payload, strlen(payload), cb);
 }
 
+void MQTTSendStrRetained(const char* topic, const char* payload, void (*cb)(void)) {
+    MQTTClient.Retained = 1;
+    MQTTSendData(topic, payload, strlen(payload), cb);
+}
+
 void MQTTSubscribe(const char* topic, void(*cb)(void)) {
     MQTTPutMessageInRingBuffer(MQTT_MESSAGE_SUBSCRIBE, topic, NULL, 0, cb);
 }

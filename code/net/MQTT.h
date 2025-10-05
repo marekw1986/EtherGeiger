@@ -212,6 +212,7 @@ BOOL MQTTDisconnect(void);
 
 void MQTTSendData(const char* topic, const char* payload, WORD payloadlen, void(*cb)(void));
 void MQTTSendStr(const char* topic, const char* payload, void(*cb)(void));
+void MQTTSendStrRetained(const char* topic, const char* payload, void (*callback)(void));
 void MQTTSubscribe(const char* topic, void(*cd)(void));
 void MQTTSetConnectCallback(void(*callback)(void));
 void MQTTSetReceiveCallback(void(*callback)(const char *, const WORD, const BYTE *, const WORD));

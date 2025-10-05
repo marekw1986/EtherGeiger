@@ -25,8 +25,8 @@ void loadDefaultSettings(void) {
     config.AppConfig.MyGateway.Val = MY_DEFAULT_GATE_BYTE1 | MY_DEFAULT_GATE_BYTE2<<8ul | MY_DEFAULT_GATE_BYTE3<<16ul | MY_DEFAULT_GATE_BYTE4<<24ul;
     config.AppConfig.PrimaryDNSServer.Val = MY_DEFAULT_PRIMARY_DNS_BYTE1 | MY_DEFAULT_PRIMARY_DNS_BYTE2 <<8ul  | MY_DEFAULT_PRIMARY_DNS_BYTE3<<16ul  | MY_DEFAULT_PRIMARY_DNS_BYTE4<<24ul;
     config.AppConfig.SecondaryDNSServer.Val = MY_DEFAULT_SECONDARY_DNS_BYTE1 | MY_DEFAULT_SECONDARY_DNS_BYTE2<<8ul  | MY_DEFAULT_SECONDARY_DNS_BYTE3<<16ul  | MY_DEFAULT_SECONDARY_DNS_BYTE4<<24ul;
-    memcpypgm2ram((void*)&config.mqtt_server, (char*)"192.168.1.105", 14);
-    memcpypgm2ram((void*)&config.mqtt_topic, (char*)"testTopic", 10);
+    memcpypgm2ram((void*)&config.mqtt_server, (char*)"192.168.1.61", 13);
+    memcpypgm2ram((void*)&config.mqtt_topic, (char*)"home/etherGeiger", 17);
     memcpypgm2ram((void*)&config.mqtt_username, (char*)"ethergeiger", 12);
     memcpypgm2ram((void*)&config.mqtt_password, (char*)"testowehaslo", 13);
     config.mqtt_port = 1883;
