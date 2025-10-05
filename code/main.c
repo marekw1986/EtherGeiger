@@ -75,7 +75,7 @@ const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
     {
         "Temperatura",
         "temperature",
-        "\\xC2\\xB0C",
+        "\u00B0C", //"\\xC2\\xB0C",
         "temperature",
         "{{ value | float }}",
         "eg_temp"
