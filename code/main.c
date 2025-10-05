@@ -66,7 +66,7 @@ typedef struct {
 
 const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
     {
-        "Promieniowanie jonizujace tla",
+        "Promieniowanie",
         "radiation",
         "uSiv/h",
         "radiation",
@@ -175,6 +175,7 @@ int main(int argc, char** argv) {
     i2c_send_byte(0xFF, PCF8574_IO_ADDR);
     init_ui();
     
+    discoveryMessagesSent = 0;
     MQTTSetConnectCallback(mqtt_on_connect);
     MQTTSetReceiveCallback(mqtt_on_receive);
     mqtt_init();
@@ -371,8 +372,17 @@ void handle_send_discovery_message(void) {
     printf("Prepared topic for discovery message: %s\n", MQTTTopicBuffer);
     
     const disco_message_t* currDiscoConst = &discoveryMessagesConst[discoveryMessageNumber];
-    snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "{\"name\": \"%s\", \"state_topic\": \"%s\", \"unit_of_measurement\": \"%s\", \"device_class\": \"%s\", \"value_template\": \"%s\", \"unique_id\": \"%s\"}", currDiscoConst->name, currDiscoConst->state_topic, currDiscoConst->unit_of_measurement, currDiscoConst->value_template, "unique_id");
+    char unique_id[256];
+    snprintf(unique_id, sizeof(unique_id), "%s/%s", config.mqtt_topic, currDiscoConst->state_topic);
+    char* p;
+    for (p = unique_id; *p; ++p) {
+        if (*p == '/') {
+            *p = '_';
+        }
+    }
+    int siz = snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "{\"name\":\"%s\",\"stat_t\":\"%s/%s\",\"unit_of_meas\":\"%s\",\"dev_cla\":\"%s\",\"val_tpl\":\"%s\",\"uniq_id\":\"%s\"}", currDiscoConst->name, config.mqtt_topic, currDiscoConst->state_topic, currDiscoConst->unit_of_measurement, currDiscoConst->device_class, currDiscoConst->value_template, unique_id);
     printf("Prepared content of discovery message: %s\n", MQTTMessageBuffer);
+    printf("Size: %d\n", siz);
     
     MQTTSendStrRetained(MQTTTopicBuffer, MQTTMessageBuffer, next_discovery_message);
     
