@@ -106,7 +106,7 @@ FATFS USBFatFS;
 uint8_t discoveryMessageSessionActive = 0;
 uint8_t mqttMessageNumber = 0;
 uint8_t discoveryMessagesSent = 0;
-uint32_t egeigerId;
+uint16_t egeigerId;
 
 char MQTTTopicBuffer[128];
 char MQTTMessageBuffer[512];
@@ -433,9 +433,9 @@ void handle_send_discovery_message(void) {
     }
     
     char unique_id[64];
-    snprintf(unique_id, sizeof(unique_id), "eg%08lX%s", egeigerId, currDiscoConst->unique_id);
+    snprintf(unique_id, sizeof(unique_id), "eg%04lX%s", egeigerId, currDiscoConst->unique_id);
     
-    int siz = snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "{\"n\":\"%s\",\"stat_t\":\"%s/%s\",\"unit_of_meas\":\"%s\",%s\"uniq_id\":\"%s\",\"dev\":{\"ids\":[\"EG%08lX\"],\"name\":\"EtherGeiger\"}}", currDiscoConst->name, config.mqtt_topic, currDiscoConst->state_topic, currDiscoConst->unit_of_measurement, class, unique_id, egeigerId);
+    int siz = snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "{\"name\":\"%s\",\"state_topic\":\"%s/%s\",\"unit_of_measurement\":\"%s\",%s\"unique_id\":\"%s\",\"device\":{\"identifiers\":[\"EG%04lX\"],\"name\":\"EtherGeiger\"}}", currDiscoConst->name, config.mqtt_topic, currDiscoConst->state_topic, currDiscoConst->unit_of_measurement, class, unique_id, egeigerId);
     printf("Prepared content of discovery message: %s\n", MQTTMessageBuffer);
     printf("Size: %d\n", siz);
     
