@@ -79,3 +79,13 @@ uint8_t contain_space(const char* str) {
 	}
 	return 0;
 }
+
+uint32_t compute_id_from_mac(void) {
+    uint32_t hash = 2166136261UL;
+    uint8_t i;
+    for (i=0; i<6; i++) {
+        hash ^= AppConfig.MyMACAddr.v[i];
+        hash *= 16777619UL;
+    }
+    return hash;
+}

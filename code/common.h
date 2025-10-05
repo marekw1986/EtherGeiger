@@ -43,6 +43,7 @@ unsigned char ByteToBcd(unsigned char i);
 unsigned char StringToMACAddress(BYTE* str, MAC_ADDR* MACAddress);
 char* constructJSON (char* buf, uint16_t len);
 uint8_t contain_space(const char* str);
+uint32_t compute_id_from_mac(void);
 
 #ifdef	__cplusplus
 }
