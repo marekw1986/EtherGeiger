@@ -6,6 +6,8 @@
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/net/MQTT.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/net/HTTP2.c</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/CustomHTTPApp.c</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/config/config.c</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/net/StackTsk.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/main.c</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/common.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/net/MQTT.c</file>
@@ -17,6 +19,7 @@
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/TCPIPConfig.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/fatfs/diskio.c</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/fatfs/ff.h</file>
+            <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/config/config.h</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/bme280/bme280.c</file>
             <file>file:/home/marek/Dropbox/Projekty/EtherGeiger/code/fatfs/diskio.h</file>
         </group>

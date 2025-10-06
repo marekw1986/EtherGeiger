@@ -32,6 +32,7 @@ uint16_t dht_humidity;
 uint32_t dht_timestamp;
 
 uint32_t mqtt_last_publish;
+uint16_t egeigerId;
 
 #ifdef	__cplusplus
 extern "C" {

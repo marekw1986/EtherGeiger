@@ -31,6 +31,7 @@
 #include "HardwareProfile.h"
 #include "lcd/i2c.h"
 #include "lcd/hd44780.h"
+#include "hamqtt/hamqtt.h"
 #include "bme280/bme280.h"
 
 
@@ -52,80 +53,15 @@
 #pragma config UPLLEN   = ON
 #pragma config UPLLIDIV = DIV_2
 
-#define DISCOVERY_MSG_NUMBER 4
-
-typedef struct {
-    const char* name;
-    const char* state_topic;
-    const char* unit_of_measurement;
-    const char* device_class;
-    const char* value_template;
-    const char* unique_id;
-} disco_message_t;
-
-const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
-    {
-        "Promieniowanie",
-        "radiation",
-        "uSiv/h",
-        NULL,
-        "{{ value | float }}",
-        "rad"
-    },
-    {
-        "Temperatura",
-        "temperature",
-        "\u00B0C", //"\\xC2\\xB0C",
-        "temperature",
-        "{{ value | float }}",
-        "temp"
-    },
-    {
-        "Wilgotnosc powietrza",
-        "humidity",
-        "%",
-        "humidity",
-        "{{ value | float }}",
-        "hum"
-    },
-    {
-        "Cisnienie atmosferyczne",
-        "pressure",
-        "hPa",
-        "pressure",
-        "{{ value | float }}",
-        "press"
-    }
-};
-
-enum {MQTT_RADIATION, MQTT_TEMPERATURE, MQTT_HUMIDITY, MQTT_PRESSURE};
-
 char buffer[128];
 FATFS SPIFatFS;
 FATFS USBFatFS;
-uint8_t mqttMessageSessionActive = 0;
-uint8_t mqttMessageNumber = 0;
-uint8_t discoveryMessagesSent = 0;
-uint16_t egeigerId;
-
-char MQTTTopicBuffer[128];
-char MQTTMessageBuffer[512];
 
 extern void GenericTCPServer(void);
 static void handle_usb_log (void);
 static void handle_bme_read (void);
 //void handle_mqtt(void);
 char* constructJSON (char* buf, uint16_t len);
-void mqtt_init (void);
-void handle_mqtt_log(void);
-void mqtt_log_next_value(void);
-void mqtt_on_connect(void);
-void mqtt_on_publish(void);
-void mqtt_on_subscribe(void);
-void mqtt_on_disconnect(void);
-void mqtt_on_receive(const char *topic, const WORD topicLength, const BYTE *payload, const WORD payloadLength);
-void handle_send_discovery_message(void);
-void next_discovery_message(void);
 
 int main(int argc, char** argv) {
     
@@ -187,7 +123,6 @@ int main(int argc, char** argv) {
     i2c_send_byte(0xFF, PCF8574_IO_ADDR);
     init_ui();
     
-    discoveryMessagesSent = 0;
     egeigerId = compute_id_from_mac();
     MQTTSetConnectCallback(mqtt_on_connect);
     MQTTSetReceiveCallback(mqtt_on_receive);
@@ -219,12 +154,7 @@ int main(int argc, char** argv) {
         handle_ui();
         lcd_handle();
         handle_usb_log();
-        if (!discoveryMessagesSent) {
-            handle_send_discovery_message();
-        }
-        else {
-            handle_mqtt_log();
-        }
+        handle_hamqtt();
     }
 
     return (EXIT_SUCCESS);
@@ -314,156 +244,6 @@ void handle_usb_log (void) {
             f_close(&file);            
         }
     }   
-}
-
-void mqtt_init (void) {
-    if(MQTTBeginUsage()) {
-        printf("Starting MQTT\r\n");
-        MQTTClient.Server.szRAM = config.mqtt_server;	// MQTT server address
-        MQTTClient.ServerPort = 1883;
-        MQTTClient.ConnectId.szRAM = "d:atlantis:ethergeiger:1";
-        MQTTClient.Topic.szRAM = config.mqtt_topic;
-        MQTTClient.Username.szRAM = config.mqtt_username;
-        MQTTClient.Password.szRAM = config.mqtt_password;                
-        MQTTClient.bSecure=FALSE;
-        MQTTClient.QOS=1;
-        MQTTClient.KeepAlive=MQTT_KEEPALIVE_LONG;   
-    }
-}
-
-void mqtt_on_connect(void) {
-    printf("MQTT connected\r\n");
-//    if (!discoveryMessagesSent) {
-    mqttMessageSessionActive = 1;
-    mqttMessageNumber = 0;
-//    }
-    //MQTTSubscribe("testTopic", mqtt_on_subscribe);
-}
-
-void mqtt_on_publish(void) {
-    printf("MQTT published\r\n");
-    mqtt_last_publish = uptime();  //TODO
-}
-
-void mqtt_on_subscribe(void) {
-    printf("MQTT subscribed\r\n");
-}
-
-void mqtt_on_disconnect(void) {
-    printf("MQTT disconnected - callback\r\n");
-    mqttMessageSessionActive = 0;
-}
-
-void mqtt_on_receive(const char *topic, const WORD topicLength, const BYTE *payload, const WORD payloadLength) {
-    char tmp[512];
-    memcpy(tmp, topic, topicLength);
-    tmp[topicLength] = '\0';
-    printf("Received topic: %s\r\n", tmp);
-    memcpy(tmp, payload, payloadLength);
-    tmp[payloadLength] = '\0';
-    printf("Received payload:\r\n%s\r\n", tmp);
-    printf("Payload len: %d\r\n", payloadLength);
-}
-
-void handle_mqtt_log(void) {
-    static uint32_t timer = 0;
-    
-    if (!mqttMessageSessionActive) {
-        return;
-    }
-    
-    if ( ((uint32_t)(uptime()-timer) >= 30) && (uptime() > 60) ) {
-        const disco_message_t* currDiscoConst = &discoveryMessagesConst[mqttMessageNumber];
-        snprintf(MQTTTopicBuffer, sizeof(MQTTTopicBuffer), "%s/%s", config.mqtt_topic, currDiscoConst->state_topic);
-        switch (mqttMessageNumber) {
-            case MQTT_RADIATION:
-            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.4f", cpm2sievert(cpm()));
-            break;
-            
-            case MQTT_TEMPERATURE:
-            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_temperature);
-            break;
-            
-            case MQTT_HUMIDITY:
-            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_humidity);
-            break;
-            
-            case MQTT_PRESSURE:
-            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_pressure);
-            break;
-            
-            default:
-            return;
-        }
-        printf("Sending %s to topic %s\n", MQTTMessageBuffer, MQTTTopicBuffer);
-        MQTTSendStr(MQTTTopicBuffer, MQTTMessageBuffer, mqtt_log_next_value);
-        timer = uptime();
-    }
-}
-
-void mqtt_log_next_value(void) {
-    mqttMessageNumber++;
-    if (mqttMessageNumber >= DISCOVERY_MSG_NUMBER) {
-        mqttMessageNumber = 0;
-    }
-    mqtt_last_publish = uptime();
-}
-
-//void handle_mqtt_log(void) {
-//    static uint32_t timer = 0;
-//    static char JSONBuffer[512];
-//    
-//    if ( ((uint32_t)(uptime()-timer) >= 30) && (uptime() > 60) ) {
-//        constructJSON(JSONBuffer, sizeof(JSONBuffer)-2);
-//        MQTTSendStr(config.mqtt_topic, JSONBuffer, mqtt_on_publish);
-//        timer = uptime();
-//    }
-//}
-
-void handle_send_discovery_message(void) {
-    if (!mqttMessageSessionActive) {
-        return;
-    }
-    
-    if (mqttMessageNumber >= DISCOVERY_MSG_NUMBER) {
-        printf("Error: trying to report discovery message with id (%d) >= %d", mqttMessageNumber, DISCOVERY_MSG_NUMBER);
-        return;
-    }
-
-    const disco_message_t* currDiscoConst = &discoveryMessagesConst[mqttMessageNumber];
-    const char* valueName = discoveryMessagesConst[mqttMessageNumber].state_topic; 
-    snprintf(MQTTTopicBuffer, sizeof(MQTTTopicBuffer), "homeassistant/sensor/%s/config", currDiscoConst->unique_id);
-    printf("Prepared topic for discovery message: %s\n", MQTTTopicBuffer);
-    
-    char class[128];
-    if (currDiscoConst->device_class != NULL) {
-        snprintf(class, sizeof(class), "\"device_class\":\"%s\",", currDiscoConst->device_class);
-    }
-    else {
-        class[0] = '\0';
-    }
-    
-    char unique_id[64];
-    snprintf(unique_id, sizeof(unique_id), "eg%04lX%s", egeigerId, currDiscoConst->unique_id);
-    
-    int siz = snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "{\"name\":\"%s\",\"state_topic\":\"%s/%s\",\"unit_of_measurement\":\"%s\",%s\"unique_id\":\"%s\",\"device\":{\"identifiers\":[\"EG%04lX\"],\"name\":\"EtherGeiger\"}}", currDiscoConst->name, config.mqtt_topic, currDiscoConst->state_topic, currDiscoConst->unit_of_measurement, class, unique_id, egeigerId);
-    printf("Prepared content of discovery message: %s\n", MQTTMessageBuffer);
-    printf("Size: %d\n", siz);
-    
-    MQTTSendStrRetained(MQTTTopicBuffer, MQTTMessageBuffer, next_discovery_message);
-    
-    mqttMessageSessionActive = 0;
-}
-
-void next_discovery_message(void) {
-    mqttMessageNumber++;
-    if (mqttMessageNumber >= DISCOVERY_MSG_NUMBER) {
-        mqttMessageNumber = 0;
-        mqttMessageSessionActive = 0;
-        discoveryMessagesSent = 1;
-        return;
-    }
-    mqttMessageSessionActive = 1;
 }
 
 

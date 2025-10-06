@@ -25,6 +25,9 @@
       <logicalFolder name="f6" displayName="Geiger" projectFiles="true">
         <itemPath>geiger/geiger.h</itemPath>
       </logicalFolder>
+      <logicalFolder name="f13" displayName="HAMQTT" projectFiles="true">
+        <itemPath>hamqtt/hamqtt.h</itemPath>
+      </logicalFolder>
       <logicalFolder name="f4" displayName="LCD" projectFiles="true">
         <itemPath>lcd/i2c.h</itemPath>
         <itemPath>lcd/hd44780.h</itemPath>
@@ -131,6 +134,9 @@
       <logicalFolder name="f11" displayName="Geiger" projectFiles="true">
         <itemPath>geiger/geiger.c</itemPath>
       </logicalFolder>
+      <logicalFolder name="f13" displayName="HAMQTT" projectFiles="true">
+        <itemPath>hamqtt/hamqtt.c</itemPath>
+      </logicalFolder>
       <logicalFolder name="f6" displayName="LCD" projectFiles="true">
         <itemPath>lcd/i2c.c</itemPath>
         <itemPath>lcd/hd44780.c</itemPath>
@@ -209,7 +215,7 @@
         <targetDevice>PIC32MX270F256B</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>noID</platformTool>
+        <platformTool>PICkit3PlatformTool</platformTool>
         <languageToolchain>XC32</languageToolchain>
         <languageToolchainVersion>2.40</languageToolchainVersion>
         <platform>2</platform>
