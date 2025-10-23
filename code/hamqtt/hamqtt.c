@@ -14,6 +14,7 @@ typedef struct {
     const char* device_class;
     const char* value_template;
     const char* unique_id;
+    const uint8_t update_interval;
 } disco_message_t;
 
 const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
@@ -23,7 +24,8 @@ const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
         "uSiv/h",
         NULL,
         "{{ value | float }}",
-        "rad"
+        "rad",
+        10
     },
     {
         "Temperatura",
@@ -31,7 +33,8 @@ const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
         "\u00B0C", //"\\xC2\\xB0C",
         "temperature",
         "{{ value | float }}",
-        "temp"
+        "temp",
+        10
     },
     {
         "Wilgotnosc powietrza",
@@ -39,7 +42,8 @@ const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
         "%",
         "humidity",
         "{{ value | float }}",
-        "hum"
+        "hum",
+        10
     },
     {
         "Cisnienie atmosferyczne",
@@ -47,9 +51,12 @@ const disco_message_t discoveryMessagesConst[DISCOVERY_MSG_NUMBER] = {
         "hPa",
         "pressure",
         "{{ value | float }}",
-        "press"
+        "press",
+        10
     }
 };
+
+uint32_t message_timers[DISCOVERY_MSG_NUMBER];
 
 char MQTTTopicBuffer[128];
 char MQTTMessageBuffer[512];
@@ -83,6 +90,7 @@ void mqtt_init (void) {
         MQTTClient.KeepAlive=MQTT_KEEPALIVE_LONG;   
     }
     discoveryMessagesSent = 0;
+    memset(message_timers, 0x00, sizeof(message_timers));
 }
 
 void mqtt_on_connect(void) {
@@ -118,36 +126,38 @@ void mqtt_on_receive(const char *topic, const WORD topicLength, const BYTE *payl
 }
 
 static void handle_mqtt_log(void) {
-    static uint32_t timer = 0;
-    
-    if ( ((uint32_t)(uptime()-timer) >= 30) && (uptime() > 60) ) {
-        const disco_message_t* currDiscoConst = &discoveryMessagesConst[mqttMessageNumber];
-        snprintf(MQTTTopicBuffer, sizeof(MQTTTopicBuffer), "%s/%s", config.mqtt_topic, currDiscoConst->state_topic);
-        switch (mqttMessageNumber) {
-            case MQTT_RADIATION:
-            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.4f", cpm2sievert(cpm()));
-            break;
-            
-            case MQTT_TEMPERATURE:
-            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_temperature);
-            break;
-            
-            case MQTT_HUMIDITY:
-            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_humidity);
-            break;
-            
-            case MQTT_PRESSURE:
-            snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_pressure);
-            break;
-            
-            default:
-            return;
-        }
-        printf("Sending %s to topic %s\n", MQTTMessageBuffer, MQTTTopicBuffer);
-        MQTTSendStr(MQTTTopicBuffer, MQTTMessageBuffer, mqtt_log_next_value);
-        mqttMessageSessionActive = 1;
-        timer = uptime();
+    if ( uptime() <= 60 ) {
+        return;
     }
+    const disco_message_t* currDiscoConst = &discoveryMessagesConst[mqttMessageNumber];
+    if ( (uint32_t)(uptime()-message_timers[mqttMessageNumber]) < currDiscoConst->update_interval ) {
+        return;
+    }
+    snprintf(MQTTTopicBuffer, sizeof(MQTTTopicBuffer), "%s/%s", config.mqtt_topic, currDiscoConst->state_topic);
+    switch (mqttMessageNumber) {
+        case MQTT_RADIATION:
+        snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.4f", cpm2sievert(cpm()));
+        break;
+
+        case MQTT_TEMPERATURE:
+        snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_temperature);
+        break;
+
+        case MQTT_HUMIDITY:
+        snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_humidity);
+        break;
+
+        case MQTT_PRESSURE:
+        snprintf(MQTTMessageBuffer, sizeof(MQTTMessageBuffer), "%.2f", bme_pressure);
+        break;
+
+        default:
+        return;
+    }
+    printf("Sending %s to topic %s\n", MQTTMessageBuffer, MQTTTopicBuffer);
+    MQTTSendStr(MQTTTopicBuffer, MQTTMessageBuffer, mqtt_log_next_value);
+    mqttMessageSessionActive = 1;
+    message_timers[mqttMessageNumber] = uptime();
 }
 
 static void mqtt_log_next_value(void) {
